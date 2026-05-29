@@ -17,8 +17,8 @@ python manage.py wait_for_db 2>/dev/null || true
 echo "==> Aplicando migrações..."
 python manage.py migrate --noinput
 
-echo "==> Coletando arquivos estáticos..."
-python manage.py collectstatic --noinput --clear
+# echo "==> Coletando arquivos estáticos..."
+# python manage.py collectstatic --noinput --clear
 
 echo "==> Criando superadmin inicial (se não existir)..."
 python manage.py shell -c "

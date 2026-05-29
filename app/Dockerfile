@@ -66,19 +66,15 @@ RUN groupadd --system appuser && useradd --system --gid appuser appuser
 # Copia o código fonte da aplicação
 COPY --chown=appuser:appuser . .
 
-# Cria diretórios necessários com as permissões corretas
-RUN mkdir -p staticfiles media \
-    && chown -R appuser:appuser staticfiles media
-
-# Coleta arquivos estáticos durante o build (WhiteNoise serve em produção)
-# Variáveis mínimas necessárias para o collectstatic
+# Coleta arquivos estáticos durante o build
+# Executamos como root para garantir a escrita, mas depois ajustamos o dono
 RUN SECRET_KEY=build-only-not-used \
-    python manage.py collectstatic --noinput
+    python manage.py collectstatic --noinput && \
+    chown -R appuser:appuser /app/staticfiles  # <--- Adicione esta linha
 
 # Torna o entrypoint executável
 RUN chmod +x scripts/entrypoint.sh
 
-# Muda para o usuário não-root
 USER appuser
 
 # Documenta a porta exposta (Cloud Run usa a variável PORT)
