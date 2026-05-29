@@ -697,3 +697,351 @@ class GrupoAdmin(StaffAccessMixin, UnfoldModelAdmin):
 
     def has_delete_permission(self, request, obj=None):
         return request.user.is_superuser
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# EstudoPessoal — acesso exclusivo para superadmin
+# ─────────────────────────────────────────────────────────────────────────────
+
+from .models import EstudoPessoal, TopicoEstudo
+
+
+# ── Helpers de exportação ────────────────────────────────────────────────────
+
+def _linhas_estudo(obj) -> list:
+    """
+    Retorna lista de (titulo_secao, conteudo) para exportação,
+    respeitando os booleans de inclusão.
+    """
+    secoes = []
+
+    def add(titulo, conteudo):
+        """Só adiciona a seção se o conteúdo for não-vazio."""
+        conteudo = (conteudo or "").strip()
+        if conteudo:
+            secoes.append((titulo, conteudo))
+
+    add("REFERÊNCIA BÍBLICA", obj.referencia)
+    add("TEXTO BÍBLICO", obj.texto_biblico)
+    add("CONTEXTO ANTERIOR", obj.contexto_anterior)
+    add("CONTEXTO POSTERIOR", obj.contexto_posterior)
+    add("VERSÍCULOS RELACIONADOS", obj.versiculos_relacionados)
+    add("PALAVRA CENTRAL", obj.palavra_central)
+    add("PALAVRA QUE SE REPETE", obj.palavra_repetida)
+    add("PALAVRA A APROFUNDAR", obj.palavra_aprofundar)
+    add("SINÔNIMOS", obj.sinonimos)
+    add("TRADUÇÃO / HEBRAICO", obj.traducao_hebraico)
+    add("TRADUÇÃO / GREGO", obj.traducao_grego)
+    add("TRADUÇÃO / LATIM", obj.traducao_latim)
+    add("TRADUÇÃO / INGLÊS", obj.traducao_ingles)
+    add("OBSERVAÇÕES PARA O PORTUGUÊS", obj.observacoes_portugues)
+    add("ONDE ESTÁ CRISTO", obj.onde_esta_cristo)
+    add("USO NO ANTIGO TESTAMENTO", obj.uso_antigo_testamento)
+    add("USO NO NOVO TESTAMENTO", obj.uso_novo_testamento)
+    add("USO HISTÓRICO GREGO", obj.uso_historico_grego)
+    add("USO NA FILOSOFIA ANTIGA", obj.uso_historico_filosofia_antiga)
+    add("FILOSOFIA MODERNA", obj.filosofia_moderna)
+    add("GÊNERO LITERÁRIO", obj.genero_literario)
+    add("CULTURA", obj.cultura)
+    add("INTENÇÃO DO AUTOR", obj.intencao_autor)
+    add("QUEM ESTÁ FALANDO?", obj.quem_fala)
+    add("PARA QUEM?", obj.para_quem)
+    add("SOBRE O QUÊ?", obj.sobre_o_que)
+    add("QUAL O OBJETIVO?", obj.qual_objetivo)
+    add("O QUE EXIGE DE MIM?", obj.o_que_exige_de_mim)
+
+    if obj.incluir_introducao:
+        add("INTRODUÇÃO", obj.introducao)
+
+    topicos = obj.topicos.filter(incluir=True).order_by("ordem")
+    if topicos.exists():
+        secoes.append(("APLICAÇÕES / TÓPICOS", ""))
+        for t in topicos:
+            secoes.append((f"  Tópico {t.ordem}: {t.titulo}", (t.conteudo or "").strip()))
+
+    if obj.incluir_explicacao:
+        add("EXPLICAÇÃO", obj.explicacao)
+    if obj.incluir_aplicacao:
+        add("APLICAÇÃO", obj.aplicacao)
+    if obj.incluir_conclusao:
+        add("CONCLUSÃO", obj.conclusao)
+    if obj.incluir_oracao:
+        add("ORAÇÃO", obj.oracao)
+
+    return secoes
+
+
+def _exportar_txt(obj):
+    """Gera HttpResponse com arquivo TXT."""
+    from django.http import HttpResponse
+
+    linhas = [f"{'=' * 60}", f"  {obj.titulo.upper()}", f"  {obj.referencia}", f"{'=' * 60}", ""]
+    for titulo, conteudo in _linhas_estudo(obj):
+        linhas.append(f"\n{'─' * 50}")
+        linhas.append(f"  {titulo}")
+        linhas.append(f"{'─' * 50}")
+        if conteudo:
+            linhas.append(conteudo)
+        linhas.append("")
+
+    response = HttpResponse("\n".join(linhas), content_type="text/plain; charset=utf-8")
+    nome = f"estudo_{obj.pk}_{obj.referencia[:30].replace(' ', '_')}.txt"
+    response["Content-Disposition"] = f'attachment; filename="{nome}"'
+    return response
+
+
+def _exportar_pdf(obj):
+    """Gera HttpResponse com arquivo PDF via reportlab."""
+    import io
+    from django.http import HttpResponse
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+    from reportlab.lib.units import cm
+    from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer
+
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(
+        buffer, pagesize=A4,
+        leftMargin=2.5 * cm, rightMargin=2.5 * cm,
+        topMargin=2.5 * cm, bottomMargin=2.5 * cm,
+    )
+    styles = getSampleStyleSheet()
+    s_titulo = ParagraphStyle("Titulo", parent=styles["Heading1"], fontSize=16, spaceAfter=6, leading=22)
+    s_ref = ParagraphStyle("Ref", parent=styles["Normal"], fontSize=11, spaceAfter=12, textColor=(0.3, 0.3, 0.3))
+    s_h2 = ParagraphStyle("H2", parent=styles["Heading2"], fontSize=11, spaceBefore=14, spaceAfter=4, leading=15)
+    s_body = ParagraphStyle("Body", parent=styles["Normal"], fontSize=10, leading=14, spaceAfter=6)
+
+    story = [Paragraph(obj.titulo, s_titulo), Paragraph(obj.referencia, s_ref)]
+    for titulo, conteudo in _linhas_estudo(obj):
+        story.append(Paragraph(titulo, s_h2))
+        if conteudo:
+            for par in conteudo.split("\n"):
+                par = par.strip()
+                if par:
+                    story.append(Paragraph(par, s_body))
+        story.append(Spacer(1, 4))
+
+    doc.build(story)
+    pdf_bytes = buffer.getvalue()
+    buffer.close()
+
+    response = HttpResponse(pdf_bytes, content_type="application/pdf")
+    nome = f"estudo_{obj.pk}_{obj.referencia[:30].replace(' ', '_')}.pdf"
+    response["Content-Disposition"] = f'attachment; filename="{nome}"'
+    return response
+
+
+def _exportar_docx(obj):
+    """Gera HttpResponse com arquivo DOCX via python-docx."""
+    import io
+    from django.http import HttpResponse
+    from docx import Document
+    from docx.shared import Pt, RGBColor
+
+    doc = Document()
+    h1 = doc.add_heading(obj.titulo, level=1)
+    h1.runs[0].font.size = Pt(18)
+    ref_par = doc.add_paragraph(obj.referencia)
+    ref_par.runs[0].font.color.rgb = RGBColor(0x44, 0x44, 0x44)
+    ref_par.runs[0].font.size = Pt(12)
+    doc.add_paragraph("")
+
+    for titulo, conteudo in _linhas_estudo(obj):
+        doc.add_heading(titulo, level=2)
+        if conteudo:
+            for linha in conteudo.split("\n"):
+                linha = linha.strip()
+                if linha:
+                    doc.add_paragraph(linha)
+
+    buffer = io.BytesIO()
+    doc.save(buffer)
+    docx_bytes = buffer.getvalue()
+    buffer.close()
+
+    response = HttpResponse(
+        docx_bytes,
+        content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    )
+    nome = f"estudo_{obj.pk}_{obj.referencia[:30].replace(' ', '_')}.docx"
+    response["Content-Disposition"] = f'attachment; filename="{nome}"'
+    return response
+
+
+# ── Ações em massa ────────────────────────────────────────────────────────────
+
+@admin.action(description="📄 Exportar como TXT")
+def acao_exportar_txt(modeladmin, request, queryset):
+    if queryset.count() == 1:
+        return _exportar_txt(queryset.first())
+    modeladmin.message_user(request, "Selecione apenas 1 estudo por vez para exportar.", messages.WARNING)
+
+
+@admin.action(description="📕 Exportar como PDF")
+def acao_exportar_pdf(modeladmin, request, queryset):
+    if queryset.count() == 1:
+        return _exportar_pdf(queryset.first())
+    modeladmin.message_user(request, "Selecione apenas 1 estudo por vez para exportar.", messages.WARNING)
+
+
+@admin.action(description="📝 Exportar como DOCX")
+def acao_exportar_docx(modeladmin, request, queryset):
+    if queryset.count() == 1:
+        return _exportar_docx(queryset.first())
+    modeladmin.message_user(request, "Selecione apenas 1 estudo por vez para exportar.", messages.WARNING)
+
+
+# ── Inline de tópicos ─────────────────────────────────────────────────────────
+
+class TopicoEstudoInline(admin.TabularInline):
+    model = TopicoEstudo
+    extra = 1
+    fields = ("ordem", "incluir", "titulo", "conteudo")
+    ordering = ("ordem",)
+
+
+# ── Admin EstudoPessoal ───────────────────────────────────────────────────────
+
+@admin.register(EstudoPessoal)
+class EstudoPessoalAdmin(UnfoldModelAdmin):
+    """Visível e editável somente por superadmin."""
+
+    list_display = ("titulo", "referencia", "criado_em", "atualizado_em")
+    list_display_links = ("titulo",)
+    search_fields = ("titulo", "referencia")
+    ordering = ("-criado_em",)
+    readonly_fields = ("criado_em", "atualizado_em")
+    inlines = [TopicoEstudoInline]
+    actions = [acao_exportar_txt, acao_exportar_pdf, acao_exportar_docx]
+
+    compressed_fields = True
+    warn_unsaved_changes = True
+
+    fieldsets = [
+        ("Identificação", {
+            "fields": ("titulo", "referencia", "criado_em", "atualizado_em"),
+        }),
+        ("Texto e Contexto Bíblico", {
+            "fields": ("texto_biblico", "contexto_anterior", "contexto_posterior", "versiculos_relacionados"),
+            "classes": ("collapse",),
+        }),
+        ("Palavras-chave e Léxico", {
+            "fields": (
+                "palavra_central", "palavra_repetida", "palavra_aprofundar", "sinonimos",
+                "traducao_hebraico", "traducao_grego", "traducao_latim", "traducao_ingles",
+                "observacoes_portugues",
+            ),
+            "classes": ("collapse",),
+        }),
+        ("Teologia e Contexto Histórico", {
+            "fields": (
+                "onde_esta_cristo",
+                "uso_antigo_testamento", "uso_novo_testamento",
+                "uso_historico_grego", "uso_historico_filosofia_antiga",
+                "filosofia_moderna", "genero_literario", "cultura", "intencao_autor",
+            ),
+            "classes": ("collapse",),
+        }),
+        ("Perguntas Hermenêuticas", {
+            "fields": ("quem_fala", "para_quem", "sobre_o_que", "qual_objetivo", "o_que_exige_de_mim"),
+            "classes": ("collapse",),
+        }),
+        ("Desenvolvimento — 1. Introdução", {
+            "fields": ("incluir_introducao", "introducao"),
+            "description": "Abertura do estudo: gancho, problema, relevância.",
+            "classes": ("collapse",),
+        }),
+        ("Desenvolvimento — 2. Aplicações / Tópicos", {
+            "fields": (),
+            "description": (
+                "⬇️  Os tópicos ficam na seção 'Tópicos' abaixo deste formulário — "
+                "na exportação (TXT / PDF / DOCX) e no template eles são inseridos "
+                "automaticamente nesta posição, entre a Introdução e a Explicação."
+            ),
+        }),
+        ("Desenvolvimento — 3. Explicação", {
+            "fields": ("incluir_explicacao", "explicacao"),
+            "description": "Exegese e exposição versículo a versículo.",
+            "classes": ("collapse",),
+        }),
+        ("Desenvolvimento — 4. Aplicação", {
+            "fields": ("incluir_aplicacao", "aplicacao"),
+            "description": "Como este texto deve transformar a vida do ouvinte?",
+            "classes": ("collapse",),
+        }),
+        ("Desenvolvimento — 5. Conclusão", {
+            "fields": ("incluir_conclusao", "conclusao"),
+            "description": "Síntese, chamada à ação ou convite.",
+            "classes": ("collapse",),
+        }),
+        ("Desenvolvimento — 6. Oração", {
+            "fields": ("incluir_oracao", "oracao"),
+            "description": "Sugestão de oração para encerrar.",
+            "classes": ("collapse",),
+        }),
+    ]
+
+    # ── Restrição total a superadmin ─────────────────────────────────────────
+
+    def has_module_perms(self, request):
+        return request.user.is_superuser
+
+    def has_view_permission(self, request, obj=None):
+        return request.user.is_superuser
+
+    def has_add_permission(self, request):
+        return request.user.is_superuser
+
+    def has_change_permission(self, request, obj=None):
+        return request.user.is_superuser
+
+    def has_delete_permission(self, request, obj=None):
+        return request.user.is_superuser
+
+    # ── URLs customizadas para exportação por botão ───────────────────────────
+
+    def get_urls(self):
+        from django.urls import path as dj_path
+        urls = super().get_urls()
+        custom = [
+            dj_path(
+                "<int:pk>/exportar/txt/",
+                self.admin_site.admin_view(self._view_exportar_txt),
+                name="estudo_estudopessoal_exportar_txt",
+            ),
+            dj_path(
+                "<int:pk>/exportar/pdf/",
+                self.admin_site.admin_view(self._view_exportar_pdf),
+                name="estudo_estudopessoal_exportar_pdf",
+            ),
+            dj_path(
+                "<int:pk>/exportar/docx/",
+                self.admin_site.admin_view(self._view_exportar_docx),
+                name="estudo_estudopessoal_exportar_docx",
+            ),
+        ]
+        return custom + urls
+
+    def _get_obj_or_403(self, request, pk):
+        from django.core.exceptions import PermissionDenied
+        if not request.user.is_superuser:
+            raise PermissionDenied
+        return EstudoPessoal.objects.get(pk=pk)
+
+    def _view_exportar_txt(self, request, pk):
+        return _exportar_txt(self._get_obj_or_403(request, pk))
+
+    def _view_exportar_pdf(self, request, pk):
+        return _exportar_pdf(self._get_obj_or_403(request, pk))
+
+    def _view_exportar_docx(self, request, pk):
+        return _exportar_docx(self._get_obj_or_403(request, pk))
+
+    def change_view(self, request, object_id, form_url="", extra_context=None):
+        extra_context = extra_context or {}
+        extra_context["exportar_urls"] = {
+            "txt":  "../exportar/txt/",
+            "pdf":  "../exportar/pdf/",
+            "docx": "../exportar/docx/",
+        }
+        return super().change_view(request, object_id, form_url, extra_context)

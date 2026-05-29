@@ -20,7 +20,7 @@ from django.shortcuts import get_object_or_404, redirect
 from django.views import View
 from django.views.generic import DetailView, ListView, TemplateView
 
-from .models import Modulo, ProgressoTema, Tema, Trilha
+from .models import Modulo, ProgressoTema, Tema, Trilha, EstudoPessoal
 
 User = get_user_model()
 
@@ -356,4 +356,40 @@ class MeuProgressoView(LoginRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context.update(_build_progresso_context(self.request.user))
+        return context
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# EstudoPessoal — visualização exclusiva para superadmin
+# ─────────────────────────────────────────────────────────────────────────────
+
+class EstudoPessoalListView(LoginRequiredMixin, ListView):
+    """Lista de estudos pessoais — apenas superadmin."""
+
+    model = EstudoPessoal
+    template_name = "estudo/estudopessoal_lista.html"
+    context_object_name = "estudos"
+    ordering = ["-criado_em"]
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_superuser:
+            raise PermissionDenied
+        return super().dispatch(request, *args, **kwargs)
+
+
+class EstudoPessoalDetalheView(LoginRequiredMixin, DetailView):
+    """Detalhe completo de um estudo pessoal — apenas superadmin."""
+
+    model = EstudoPessoal
+    template_name = "estudo/estudopessoal_detalhe.html"
+    context_object_name = "estudo"
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_superuser:
+            raise PermissionDenied
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["topicos"] = self.object.topicos.filter(incluir=True).order_by("ordem")
         return context

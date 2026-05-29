@@ -44,5 +44,8 @@ django-import-export>=3.3
 # Leitura de arquivos Word (.docx) para importação de conteúdo
 python-docx>=1.1
 
+# Geração de PDF para exportação de estudos pessoais
+reportlab>=4.0
+
 # Criptografia simétrica (Fernet) — usada em ConfiguracaoEmail para a senha SMTP
 cryptography>=42.0

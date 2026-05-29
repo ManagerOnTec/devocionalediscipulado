@@ -362,6 +362,12 @@ UNFOLD = {
                             "estudo.view_progressotema"
                         ),
                     },
+                    {
+                        "title": "Estudos Pessoais",
+                        "icon": "auto_stories",
+                        "link": reverse_lazy("admin:estudo_estudopessoal_changelist"),
+                        "permission": lambda request: request.user.is_superuser,
+                    },
                 ],
             },
             {
