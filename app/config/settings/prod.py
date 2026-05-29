@@ -68,6 +68,29 @@ EMAIL_HOST_USER = config("EMAIL_HOST_USER", default="")
 EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD", default="")
 DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL", default="noreply@example.com")
 
+# ─── GCS — armazenamento de arquivos de mídia (uploads) ─────────────────────
+# Estáticos são servidos pelo WhiteNoise (sem GCS).
+# Mídia (imagens de capa, uploads) vai para um bucket GCS.
+
+GS_BUCKET_NAME = config("GS_BUCKET_NAME", default="")
+
+if GS_BUCKET_NAME:
+    GS_DEFAULT_ACL = None          # Usa IAM do bucket (sem ACL pública exposta)
+    GS_QUERYSTRING_AUTH = False    # URLs sem token (bucket é público via IAM Conditions)
+    GS_FILE_OVERWRITE = False      # Nunca sobrescreve arquivos com mesmo nome
+    GS_MAX_MEMORY_SIZE = 5 * 1024 * 1024  # 5 MB — acima disso usa arquivo temp
+
+    STORAGES = {
+        "default": {
+            "BACKEND": "storages.backends.gcloud.GoogleCloudStorage",
+        },
+        "staticfiles": {
+            # Estáticos continuam sendo servidos pelo WhiteNoise
+            "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+        },
+    }
+    MEDIA_URL = f"https://storage.googleapis.com/{GS_BUCKET_NAME}/"
+
 # ─── Logs de produção ────────────────────────────────────────────────────────
 
 LOGGING = {

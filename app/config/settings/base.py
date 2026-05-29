@@ -50,6 +50,7 @@ THIRD_PARTY_APPS = [
     "crispy_bootstrap5",    # Tema Bootstrap 5
     "simple_history",       # Auditoria de alterações
     "import_export",        # Import/Export de dados
+    "storages",             # django-storages (GCS media em produção)
 ]
 
 # Apps locais do projeto (dentro da pasta apps/)
@@ -112,18 +113,30 @@ WSGI_APPLICATION = "config.wsgi.application"
 # ─── Banco de dados ───────────────────────────────────────────────────────────
 
 # PostgreSQL — configurado via variáveis de ambiente
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": config("DB_NAME", default="devocionalediscipulado"),
-        "USER": config("DB_USER", default="postgres"),
-        "PASSWORD": config("DB_PASSWORD", default="postgres"),
-        "HOST": config("DB_HOST", default="db"),
-        "PORT": config("DB_PORT", default="5432"),
-        # Pool de conexões: evita abrir/fechar conexão a cada request
-        "CONN_MAX_AGE": 60,
+# DATABASE_URL tem prioridade (Neon / Cloud SQL via URL).
+# Se não definida, usa as variáveis individuais DB_* (Docker Compose local).
+_DATABASE_URL = config("DATABASE_URL", default="")
+if _DATABASE_URL:
+    import dj_database_url
+    DATABASES = {
+        "default": dj_database_url.parse(
+            _DATABASE_URL,
+            conn_max_age=60,
+            ssl_require=True,
+        )
     }
-}
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": config("DB_NAME", default="devocionalediscipulado"),
+            "USER": config("DB_USER", default="postgres"),
+            "PASSWORD": config("DB_PASSWORD", default="postgres"),
+            "HOST": config("DB_HOST", default="db"),
+            "PORT": config("DB_PORT", default="5432"),
+            "CONN_MAX_AGE": 60,
+        }
+    }
 
 # ─── Modelo de usuário customizado ──────────────────────────────────────────
 

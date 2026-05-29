@@ -4,3 +4,6 @@
 
 # Monitoramento de erros
 sentry-sdk[django]>=1.45
+
+# Parse de DATABASE_URL (Neon / Cloud SQL via connection string)
+dj-database-url>=2.1

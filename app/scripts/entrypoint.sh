@@ -20,6 +20,20 @@ python manage.py migrate --noinput
 echo "==> Coletando arquivos estáticos..."
 python manage.py collectstatic --noinput --clear
 
+echo "==> Criando superadmin inicial (se não existir)..."
+python manage.py shell -c "
+from django.contrib.auth import get_user_model
+import os
+User = get_user_model()
+email = os.environ.get('DJANGO_SUPERUSER_EMAIL', 'admin@managerontecsolutions.com.br')
+password = os.environ.get('DJANGO_SUPERUSER_PASSWORD', 'admin')
+if not User.objects.filter(email=email).exists():
+    User.objects.create_superuser(email=email, password=password)
+    print(f'Superadmin criado: {email}')
+else:
+    print(f'Superadmin já existe: {email}')
+"
+
 echo "==> Iniciando Gunicorn na porta ${PORT:-8080}..."
 exec gunicorn config.wsgi:application \
     --bind "0.0.0.0:${PORT:-8080}" \
