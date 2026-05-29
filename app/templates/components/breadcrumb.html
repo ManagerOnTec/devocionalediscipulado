@@ -1,0 +1,40 @@
+{% comment %}
+Componente de breadcrumb acessível.
+
+Uso:
+  {% with breadcrumbs=lista_de_items %}
+  {% include 'components/breadcrumb.html' %}
+  {% endwith %}
+
+  Ou diretamente via bloco breadcrumb do base.html:
+  {% block breadcrumb %}
+  {% include 'components/breadcrumb.html' with breadcrumbs=breadcrumbs %}
+  {% endblock %}
+
+Parâmetro:
+  breadcrumbs → lista de dicts:
+    [
+      {"label": "Início", "url": "/"},
+      {"label": "Seção",  "url": "/secao/"},
+      {"label": "Página atual"}   ← sem "url" = item ativo
+    ]
+{% endcomment %}
+{% if breadcrumbs %}
+<nav aria-label="Navegação estrutural" class="bg-body-tertiary border-bottom">
+    <div class="container">
+        <ol class="breadcrumb py-2 mb-0 small">
+            {% for item in breadcrumbs %}
+                {% if item.url %}
+                <li class="breadcrumb-item">
+                    <a href="{{ item.url }}" class="text-decoration-none">{{ item.label }}</a>
+                </li>
+                {% else %}
+                <li class="breadcrumb-item active" aria-current="page">
+                    {{ item.label }}
+                </li>
+                {% endif %}
+            {% endfor %}
+        </ol>
+    </div>
+</nav>
+{% endif %}

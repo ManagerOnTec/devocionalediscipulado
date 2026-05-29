@@ -1,0 +1,37 @@
+{% comment %}
+Componente de estado vazio (empty state).
+
+Uso:
+  {% include 'components/empty_state.html' with
+      icon="bi-inbox"
+      titulo="Nenhum item encontrado"
+      mensagem="Adicione um item para começar."
+      btn_url=url
+      btn_label="Adicionar"
+      btn_icon="bi-plus-lg"
+  %}
+
+Parâmetros:
+  icon        → classe bi-* do ícone (padrão: bi-inbox)
+  titulo      → título principal (obrigatório)
+  mensagem    → texto descritivo (opcional)
+  btn_url     → URL do botão de ação; se omitido, botão não é exibido
+  btn_label   → texto do botão (padrão: "Adicionar")
+  btn_icon    → ícone do botão, classe bi-* (opcional)
+{% endcomment %}
+<div class="empty-state py-5 text-center" role="status">
+    <i class="bi {{ icon|default:'bi-inbox' }} display-1 text-muted mb-3 d-block" aria-hidden="true"></i>
+
+    <h2 class="h5 fw-semibold text-muted mb-2">{{ titulo }}</h2>
+
+    {% if mensagem %}
+    <p class="text-muted small mb-4 mx-auto" style="max-width: 360px;">{{ mensagem }}</p>
+    {% endif %}
+
+    {% if btn_url %}
+    <a href="{{ btn_url }}" class="btn btn-primary">
+        {% if btn_icon %}<i class="bi {{ btn_icon }} me-1" aria-hidden="true"></i>{% endif %}
+        {{ btn_label|default:'Adicionar' }}
+    </a>
+    {% endif %}
+</div>

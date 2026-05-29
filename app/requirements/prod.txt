@@ -1,0 +1,6 @@
+-r base.txt
+
+# ── Extras exclusivos de produção ────────────────────────────────────────────
+
+# Monitoramento de erros
+sentry-sdk[django]>=1.45

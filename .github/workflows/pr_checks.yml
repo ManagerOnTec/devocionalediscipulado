@@ -1,0 +1,46 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# pr_checks.yml — Verificações de Segurança em Pull Requests
+#
+# Executa em todo pull_request aberto contra main.
+# Jobs:
+#   security-check → safety (vulnerabilidades em deps) + bandit (SAST)
+# ─────────────────────────────────────────────────────────────────────────────
+
+name: PR Security Checks
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  # ── Verificação de Segurança ─────────────────────────────────────────────────
+  security-check:
+    name: Security (safety + bandit)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install security tools
+        run: pip install safety bandit
+
+      - name: safety — vulnerabilidades em dependências
+        # continue-on-error para não bloquear o PR em falsos positivos,
+        # mas o resultado fica visível no summary do workflow.
+        run: >
+          safety check
+          -r app/requirements/base.txt
+          -r app/requirements/prod.txt
+          --continue-on-error
+        continue-on-error: true
+
+      - name: bandit — análise estática de segurança (SAST)
+        # -ll  → reporta apenas severidade MEDIUM e HIGH
+        # --skip B101 → ignora asserts (usados legitimamente em testes)
+        run: bandit -r app/apps/ -ll --skip=B101

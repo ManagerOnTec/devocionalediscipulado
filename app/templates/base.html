@@ -1,0 +1,236 @@
+{% comment %}
+Template base do projeto Devocional e Discipulado.
+
+Todos os templates do projeto devem estender este arquivo.
+Blocos disponíveis:
+  - titulo          → <title> da página
+  - meta_description → meta description da página
+  - extra_css       → CSS adicional no <head>
+  - breadcrumb      → navegação estrutural (entre navbar e main, opcional)
+  - page_header     → cabeçalho de página (dentro de main, antes do content)
+  - content         → conteúdo principal
+  - extra_js        → scripts JS no final do body
+{% endcomment %}
+<!DOCTYPE html>
+<html lang="pt-br" data-bs-theme="{{ dark_mode_theme }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="{% block meta_description %}Devocional e Discipulado — Sistema de gestão{% endblock %}">
+    <meta name="theme-color" content="{% if dark_mode_active %}#212529{% else %}#0d6efd{% endif %}">
+
+    <title>{% block titulo %}Devocional e Discipulado{% endblock %}</title>
+
+    {% load static %}
+    <link rel="icon" type="image/svg+xml" href="{% static 'images/favicon.svg' %}">
+
+    <!-- Schema.org WebSite -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "Devocional e Discipulado",
+      "description": "Sistema de gestão de devocionais e discipulado",
+      "inLanguage": "pt-BR"
+    }
+    </script>
+
+    <!-- Bootstrap 5 CSS -->
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+        rel="stylesheet"
+        integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
+        crossorigin="anonymous"
+    >
+
+    <!-- Bootstrap Icons -->
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+        rel="stylesheet"
+    >
+
+    <!-- CSS customizado do projeto -->
+    <link rel="stylesheet" href="{% static 'css/main.css' %}?v=2">
+
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="d-flex flex-column min-vh-100" data-authenticated="{{ user.is_authenticated|lower }}">
+
+    <!-- ── Loading overlay ───────────────────────────────────────────────── -->
+    <div id="page-loader" role="status" aria-live="polite" aria-label="Carregando página">
+        <div class="spinner-border text-primary" role="presentation">
+            <span class="visually-hidden">Carregando…</span>
+        </div>
+    </div>
+
+    <!-- ── Navegação ─────────────────────────────────────────────────────── -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="{% url 'core:home' %}">
+                <i class="bi bi-book-half me-2" aria-hidden="true"></i>Devocional e Discipulado
+            </a>
+
+            <button
+                class="navbar-toggler"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#navbarNav"
+                aria-controls="navbarNav"
+                aria-expanded="false"
+                aria-label="Alternar navegação"
+            >
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto align-items-lg-center gap-1">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'estudo:lista_trilhas' %}">
+                            <i class="bi bi-journal-bookmark me-1" aria-hidden="true"></i>Estudos
+                        </a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav ms-auto align-items-lg-center gap-1">
+                    {% if user.is_authenticated %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'sac:formulario' %}" title="SAC / Suporte">
+                                <i class="bi bi-headset me-1" aria-hidden="true"></i>Suporte
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'accounts:perfil' %}" title="Meu Perfil">
+                                <i class="bi bi-person-circle me-1" aria-hidden="true"></i>
+                                {{ user.primeiro_nome|default:user.get_full_name }}
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <form method="post" action="{% url 'accounts:logout' %}" class="d-inline">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-link nav-link border-0">
+                                    <i class="bi bi-box-arrow-right me-1" aria-hidden="true"></i>Sair
+                                </button>
+                            </form>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'accounts:login' %}">
+                                <i class="bi bi-box-arrow-in-right me-1" aria-hidden="true"></i>Entrar
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'accounts:cadastro' %}">
+                                <i class="bi bi-person-plus me-1" aria-hidden="true"></i>Criar conta
+                            </a>
+                        </li>
+                    {% endif %}
+
+                    <!-- Botão de alternar dark/light mode -->
+                    <li class="nav-item ms-lg-2">
+                        <button
+                            id="btn-dark-mode"
+                            class="btn btn-sm btn-outline-light"
+                            title="Alternar tema"
+                            aria-label="Alternar modo escuro"
+                        >
+                            <i id="dark-mode-icon" class="bi {% if dark_mode_active %}bi-sun-fill{% else %}bi-moon-fill{% endif %}" aria-hidden="true"></i>
+                        </button>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- ── Breadcrumb (opcional) ─────────────────────────────────────────── -->
+    {% block breadcrumb %}{% endblock %}
+
+    <!-- ── Mensagens Django (feedback de ações) ───────────────────────────── -->
+    {% if messages %}
+    <div class="container mt-3" aria-live="polite" aria-atomic="true">
+        {% for message in messages %}
+        <div
+            class="alert alert-{% if message.tags == 'error' %}danger{% elif message.tags == 'debug' %}secondary{% else %}{{ message.tags|default:'info' }}{% endif %} alert-dismissible fade show{% if message.tags == 'success' or message.tags == 'info' %} alert-auto-dismiss{% endif %}"
+            role="alert"
+        >
+            {% if message.tags == 'success' %}<i class="bi bi-check-circle-fill me-2" aria-hidden="true"></i>{% endif %}
+            {% if message.tags == 'error' %}<i class="bi bi-x-circle-fill me-2" aria-hidden="true"></i>{% endif %}
+            {% if message.tags == 'warning' %}<i class="bi bi-exclamation-triangle-fill me-2" aria-hidden="true"></i>{% endif %}
+            {% if message.tags == 'info' %}<i class="bi bi-info-circle-fill me-2" aria-hidden="true"></i>{% endif %}
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- ── Conteúdo principal ─────────────────────────────────────────────── -->
+    <main class="container my-4 flex-grow-1" id="main-content">
+        {% block page_header %}{% endblock %}
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- ── Rodapé ─────────────────────────────────────────────────────────── -->
+    <footer class="bg-body-secondary border-top py-3 mt-auto">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-12 col-md-6 text-center text-md-start text-muted small">
+                    &copy; {% now "Y" %} Devocional e Discipulado. Todos os direitos reservados.
+                </div>
+                {% if user.is_authenticated and user.is_staff %}
+                <nav class="col-12 col-md-6 text-center text-md-end mt-2 mt-md-0" aria-label="Links do rodapé">
+                    <a href="{% url 'admin:index' %}" class="text-muted small">
+                        <i class="bi bi-shield-lock me-1" aria-hidden="true"></i>Painel admin
+                    </a>
+                </nav>
+                {% elif not user.is_authenticated %}
+                <nav class="col-12 col-md-6 text-center text-md-end mt-2 mt-md-0" aria-label="Links do rodapé">
+                    <a href="{% url 'accounts:login' %}" class="text-muted small me-3">
+                        <i class="bi bi-box-arrow-in-right me-1" aria-hidden="true"></i>Entrar
+                    </a>
+                    <a href="{% url 'accounts:cadastro' %}" class="text-muted small me-3">
+                        <i class="bi bi-person-plus me-1" aria-hidden="true"></i>Cadastro
+                    </a>
+                    <a href="{% url 'admin:index' %}" class="text-muted small">
+                        <i class="bi bi-shield-lock me-1" aria-hidden="true"></i>Admin
+                    </a>
+                </nav>
+                {% endif %}
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap 5 JS (bundle inclui Popper) -->
+    <script
+        src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+        crossorigin="anonymous"
+    ></script>
+
+    <!-- Dark mode toggle -->
+    <script src="{% static 'js/dark-mode.js' %}"></script>
+
+    <!-- Page loader e auto-dismiss de alertas -->
+    <script>
+    (function () {
+        // Ocultar loading overlay quando a página terminar de carregar
+        window.addEventListener('load', function () {
+            var loader = document.getElementById('page-loader');
+            if (loader) {
+                loader.classList.add('loaded');
+            }
+        });
+
+        // Auto-dismiss para alertas de sucesso e info (5 segundos)
+        document.addEventListener('DOMContentLoaded', function () {
+            document.querySelectorAll('.alert-auto-dismiss').forEach(function (el) {
+                setTimeout(function () {
+                    var bsAlert = bootstrap.Alert.getOrCreateInstance(el);
+                    bsAlert.close();
+                }, 5000);
+            });
+        });
+    })();
+    </script>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

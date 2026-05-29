@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block titulo %}Meu Progresso — Estudos{% endblock %}
+{% block meta_description %}Acompanhe seu progresso em todas as trilhas de estudo.{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="Navegação estrutural" class="bg-body-tertiary border-bottom">
+    <div class="container">
+        <ol class="breadcrumb py-2 mb-0 small">
+            <li class="breadcrumb-item">
+                <a href="{% url 'core:home' %}" class="text-decoration-none">Início</a>
+            </li>
+            <li class="breadcrumb-item">
+                <a href="{% url 'estudo:lista_trilhas' %}" class="text-decoration-none">Estudos</a>
+            </li>
+            <li class="breadcrumb-item active" aria-current="page">Meu Progresso</li>
+        </ol>
+    </div>
+</nav>
+{% endblock %}
+
+{% block page_header %}
+<div class="mb-4">
+    <h1 class="h3 fw-bold mb-1">
+        <i class="bi bi-trophy me-2 text-warning" aria-hidden="true"></i>Meu Progresso
+    </h1>
+    <p class="text-body-secondary mb-0">
+        {{ concluidos_ids|length }} tema{{ concluidos_ids|length|pluralize }} concluído{{ concluidos_ids|length|pluralize }} no total.
+    </p>
+</div>
+{% endblock %}
+
+{% block content %}
+
+{% if trilhas_progresso %}
+
+{% for trilha_item in trilhas_progresso %}
+<section class="mb-5" aria-labelledby="trilha-{{ forloop.counter }}-heading">
+
+    {# ── Cabeçalho da trilha ── #}
+    <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+        <h2 id="trilha-{{ forloop.counter }}-heading" class="h5 fw-semibold mb-0">
+            <a href="{% url 'estudo:detalhe_trilha' slug=trilha_item.obj.slug %}" class="text-decoration-none">
+                {% if trilha_item.obj.tipo == "DEVOCIONAL" %}
+                <i class="bi bi-book me-2 text-primary" aria-hidden="true"></i>
+                {% else %}
+                <i class="bi bi-people me-2 text-success" aria-hidden="true"></i>
+                {% endif %}
+                {{ trilha_item.obj.titulo }}
+            </a>
+        </h2>
+        <span class="badge {% if trilha_item.obj.tipo == 'DEVOCIONAL' %}text-bg-primary{% else %}text-bg-success{% endif %}">
+            {{ trilha_item.obj.get_tipo_display }}
+        </span>
+    </div>
+
+    {% if trilha_item.modulos %}
+    <div class="list-group shadow-sm">
+        {% for modulo_item in trilha_item.modulos %}
+
+        {% if modulo_item.desbloqueado %}
+        {# ── Módulo desbloqueado ── #}
+        <a
+            href="{% url 'estudo:detalhe_modulo' slug=modulo_item.obj.slug %}"
+            class="list-group-item list-group-item-action p-3"
+            aria-label="{{ modulo_item.obj.titulo }}: {{ modulo_item.percentual }}% concluído"
+        >
+            <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+                <div class="d-flex align-items-center gap-2">
+                    {# ── Imagem miniatura ── #}
+                    {% if modulo_item.obj.imagem_capa %}
+                    <img
+                        src="{{ modulo_item.obj.imagem_capa.url }}"
+                        alt=""
+                        class="rounded flex-shrink-0 object-fit-cover"
+                        style="width: 40px; height: 40px;"
+                        loading="lazy"
+                    >
+                    {% endif %}
+                    <span class="fw-semibold small">{{ modulo_item.obj.titulo }}</span>
+                </div>
+
+                {% if modulo_item.percentual == 100 %}
+                <span class="badge text-bg-success flex-shrink-0">
+                    <i class="bi bi-check-circle-fill me-1" aria-hidden="true"></i>Completo
+                </span>
+                {% elif modulo_item.percentual > 0 %}
+                <span class="badge text-bg-warning flex-shrink-0">{{ modulo_item.percentual }}%</span>
+                {% else %}
+                <span class="badge text-bg-secondary flex-shrink-0">Não iniciado</span>
+                {% endif %}
+            </div>
+
+            <div
+                class="progress"
+                style="height: 6px;"
+                role="progressbar"
+                aria-valuenow="{{ modulo_item.percentual }}"
+                aria-valuemin="0"
+                aria-valuemax="100"
+            >
+                <div
+                    class="progress-bar{% if modulo_item.percentual == 100 %} bg-success{% elif modulo_item.percentual > 0 %} bg-warning{% endif %}"
+                    style="width: {{ modulo_item.percentual }}%;"
+                ></div>
+            </div>
+        </a>
+
+        {% else %}
+        {# ── Módulo bloqueado ── #}
+        <div
+            class="list-group-item p-3 text-muted"
+            aria-label="{{ modulo_item.obj.titulo }} — bloqueado"
+        >
+            <div class="d-flex align-items-center gap-3">
+                <i class="bi bi-lock text-muted flex-shrink-0" aria-hidden="true"></i>
+                <span class="small">{{ modulo_item.obj.titulo }}</span>
+                <span class="badge text-bg-light text-muted ms-auto flex-shrink-0">Bloqueado</span>
+            </div>
+        </div>
+        {% endif %}
+
+        {% endfor %}
+    </div>
+
+    {% else %}
+    <p class="text-muted small">Esta trilha ainda não possui módulos.</p>
+    {% endif %}
+
+</section>
+{% endfor %}
+
+{% else %}
+{# ── Estado vazio ── #}
+{% url 'estudo:lista_trilhas' as url_lista %}
+{% include "components/empty_state.html" with
+    icon="bi-trophy"
+    titulo="Nenhum estudo disponível"
+    mensagem="Não há trilhas publicadas no momento. Volte em breve."
+    btn_url=url_lista
+    btn_label="Explorar Estudos"
+    btn_icon="bi-journal-bookmark"
+%}
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block titulo %}{{ trilha.titulo }} — Estudos{% endblock %}
+{% block meta_description %}{{ trilha.descricao|default:trilha.titulo|truncatechars:160 }}{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="Navegação estrutural" class="bg-body-tertiary border-bottom">
+    <div class="container">
+        <ol class="breadcrumb py-2 mb-0 small">
+            <li class="breadcrumb-item">
+                <a href="{% url 'core:home' %}" class="text-decoration-none">Início</a>
+            </li>
+            <li class="breadcrumb-item">
+                <a href="{% url 'estudo:lista_trilhas' %}" class="text-decoration-none">Estudos</a>
+            </li>
+            <li class="breadcrumb-item active" aria-current="page">{{ trilha.titulo }}</li>
+        </ol>
+    </div>
+</nav>
+{% endblock %}
+
+{% block content %}
+<article>
+
+    {# ── Cabeçalho da trilha ── #}
+    <header class="mb-4">
+        <div class="d-flex align-items-center gap-2 mb-1">
+            <span class="badge {% if trilha.tipo == 'DEVOCIONAL' %}text-bg-primary{% else %}text-bg-success{% endif %}">
+                {{ trilha.get_tipo_display }}
+            </span>
+            <span class="badge text-bg-secondary">{{ trilha.get_acesso_display }}</span>
+        </div>
+        <h1 class="h2 fw-bold mb-2">
+            {% if trilha.tipo == "DEVOCIONAL" %}
+            <i class="bi bi-book me-2 text-primary" aria-hidden="true"></i>
+            {% else %}
+            <i class="bi bi-people me-2 text-success" aria-hidden="true"></i>
+            {% endif %}
+            {{ trilha.titulo }}
+        </h1>
+        {% if trilha.descricao %}
+        <p class="lead text-body-secondary">{{ trilha.descricao }}</p>
+        {% endif %}
+    </header>
+
+    {# ── Lista de módulos ── #}
+    <section aria-labelledby="modulos-heading">
+        <h2 id="modulos-heading" class="h5 fw-semibold mb-3">
+            <i class="bi bi-grid-3x3-gap me-2 text-primary" aria-hidden="true"></i>Módulos da trilha
+        </h2>
+
+        {% if modulos_progresso %}
+        <div class="list-group shadow-sm">
+            {% for item in modulos_progresso %}
+
+            {% if item.desbloqueado %}
+            {# ── Módulo desbloqueado ── #}
+            <a
+                href="{% url 'estudo:detalhe_modulo' slug=item.obj.slug %}"
+                class="list-group-item list-group-item-action p-3"
+                aria-label="Módulo {{ forloop.counter }}: {{ item.obj.titulo }}{% if item.percentual == 100 %} — completo{% endif %}"
+            >
+                <div class="d-flex justify-content-between align-items-start mb-2 flex-wrap gap-2">
+                    <div class="d-flex align-items-start gap-3">
+                        {# ── Imagem do módulo ── #}
+                        {% if item.obj.imagem_capa %}
+                        <img
+                            src="{{ item.obj.imagem_capa.url }}"
+                            alt=""
+                            class="rounded flex-shrink-0 object-fit-cover"
+                            style="width: 56px; height: 56px;"
+                            loading="lazy"
+                        >
+                        {% else %}
+                        <div
+                            class="rounded flex-shrink-0 bg-primary bg-opacity-10 d-flex align-items-center justify-content-center"
+                            style="width: 56px; height: 56px;"
+                            aria-hidden="true"
+                        >
+                            <i class="bi bi-collection text-primary fs-5"></i>
+                        </div>
+                        {% endif %}
+
+                        <div>
+                            <span class="fw-semibold">
+                                <span class="text-primary me-2" aria-hidden="true">{{ forloop.counter }}.</span>{{ item.obj.titulo }}
+                            </span>
+                            {% if item.obj.descricao %}
+                            <p class="text-body-secondary small mb-0 mt-1">{{ item.obj.descricao|truncatechars:100 }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    {% if item.percentual == 100 %}
+                    <span class="badge text-bg-success flex-shrink-0">
+                        <i class="bi bi-check-circle-fill me-1" aria-hidden="true"></i>Completo
+                    </span>
+                    {% elif item.percentual > 0 %}
+                    <span class="badge text-bg-warning flex-shrink-0" aria-label="{{ item.percentual }}% concluído">
+                        {{ item.percentual }}%
+                    </span>
+                    {% else %}
+                    <span class="badge text-bg-secondary flex-shrink-0">Iniciar</span>
+                    {% endif %}
+                </div>
+
+                <div
+                    class="progress"
+                    style="height: 6px;"
+                    role="progressbar"
+                    aria-valuenow="{{ item.percentual }}"
+                    aria-valuemin="0"
+                    aria-valuemax="100"
+                    aria-label="Progresso em {{ item.obj.titulo }}: {{ item.percentual }}%"
+                >
+                    <div
+                        class="progress-bar{% if item.percentual == 100 %} bg-success{% elif item.percentual > 0 %} bg-warning{% endif %}"
+                        style="width: {{ item.percentual }}%;"
+                    ></div>
+                </div>
+            </a>
+
+            {% else %}
+            {# ── Módulo bloqueado ── #}
+            <div
+                class="list-group-item p-3 text-muted"
+                aria-label="Módulo {{ forloop.counter }}: {{ item.obj.titulo }} — bloqueado"
+            >
+                <div class="d-flex align-items-center gap-3">
+                    <i class="bi bi-lock fs-5 flex-shrink-0" aria-hidden="true"></i>
+                    <div>
+                        <span class="fw-semibold">
+                            <span class="me-2" aria-hidden="true">{{ forloop.counter }}.</span>{{ item.obj.titulo }}
+                        </span>
+                        <p class="small mb-0 mt-1">Conclua o módulo anterior para desbloquear.</p>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {% endfor %}
+        </div>
+
+        {% else %}
+        {# ── Estado vazio ── #}
+        {% include "components/empty_state.html" with
+            icon="bi-grid-3x3-gap"
+            titulo="Nenhum módulo disponível"
+            mensagem="Esta trilha ainda não possui módulos publicados."
+        %}
+        {% endif %}
+
+    </section>
+
+</article>
+{% endblock %}

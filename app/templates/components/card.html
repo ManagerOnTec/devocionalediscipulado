@@ -1,0 +1,39 @@
+{% comment %}
+Componente de card reutilizável.
+
+Uso via extends (para slot de conteúdo):
+  {% extends 'components/card.html' %}
+  {% block card_body %}conteúdo aqui{% endblock %}
+
+Variáveis de contexto:
+  titulo          → título do header do card (opcional)
+  subtitulo       → subtítulo abaixo do título (opcional)
+  icon            → classe bi-* para ícone no header, ex: "bi-book" (opcional)
+  footer_content  → texto ou HTML do rodapé do card (opcional)
+  card_class      → classes CSS extras na div.card, ex: "card-hover shadow-sm" (opcional)
+{% endcomment %}
+<div class="card {{ card_class }}">
+    {% if titulo %}
+    <div class="card-header">
+        <div class="d-flex align-items-center">
+            {% if icon %}
+            <i class="bi {{ icon }} me-2 fs-5" aria-hidden="true"></i>
+            {% endif %}
+            <span class="fw-semibold">{{ titulo }}</span>
+        </div>
+        {% if subtitulo %}
+        <p class="text-muted small mb-0 mt-1">{{ subtitulo }}</p>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <div class="card-body">
+        {% block card_body %}{% endblock %}
+    </div>
+
+    {% if footer_content %}
+    <div class="card-footer text-muted small">
+        {{ footer_content }}
+    </div>
+    {% endif %}
+</div>

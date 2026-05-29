@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <!--
+    Favicon — livro aberto, 32×32
+    Cores neutras (slate) sobre fundo transparente.
+  -->
+
+  <!-- Página esquerda -->
+  <path d="M2 25 L2 10 Q2 8 4.5 8 L15 9.5 L15 27 L4.5 26 Q2 25.8 2 24 Z"
+        fill="#334155"/>
+
+  <!-- Página direita -->
+  <path d="M30 25 L30 10 Q30 8 27.5 8 L17 9.5 L17 27 L27.5 26 Q30 25.8 30 24 Z"
+        fill="#475569"/>
+
+  <!-- Lombada / spine -->
+  <rect x="14" y="7.5" width="4" height="20" rx="0.5" fill="#1e293b"/>
+
+  <!-- Linhas de texto — página esquerda -->
+  <line x1="5"  y1="13.5" x2="13" y2="13"   stroke="#94a3b8" stroke-width="1.2" stroke-linecap="round"/>
+  <line x1="5"  y1="17"   x2="13" y2="16.5" stroke="#94a3b8" stroke-width="1.2" stroke-linecap="round"/>
+  <line x1="5"  y1="20.5" x2="13" y2="20"   stroke="#94a3b8" stroke-width="1.2" stroke-linecap="round"/>
+
+  <!-- Linhas de texto — página direita -->
+  <line x1="19" y1="13"   x2="27" y2="13.5" stroke="#cbd5e1" stroke-width="1.2" stroke-linecap="round"/>
+  <line x1="19" y1="16.5" x2="27" y2="17"   stroke="#cbd5e1" stroke-width="1.2" stroke-linecap="round"/>
+  <line x1="19" y1="20"   x2="27" y2="20.5" stroke="#cbd5e1" stroke-width="1.2" stroke-linecap="round"/>
+</svg>

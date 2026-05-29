@@ -1,0 +1,48 @@
+# ── Dependências base do projeto ─────────────────────────────────────────────
+
+# Framework principal
+Django>=5.0,<6.0
+
+# Banco de dados PostgreSQL
+psycopg2-binary>=2.9.9
+
+# Variáveis de ambiente seguras
+python-decouple>=3.8
+
+# Servidor WSGI para produção
+gunicorn>=21.2
+
+# Servir arquivos estáticos com compressão (Brotli + Gzip)
+whitenoise[brotli]>=6.6
+
+# Filtros para QuerySets
+django-filter>=23.5
+
+# API REST
+djangorestframework>=3.15
+
+# Formulários com Bootstrap 5
+django-crispy-forms>=2.3
+crispy-bootstrap5>=2024.2
+
+# Upload e armazenamento de arquivos (GCS)
+django-storages[google]>=1.14
+google-cloud-storage>=2.16
+
+# Processamento de imagens
+Pillow>=10.3
+
+# Admin moderno
+django-unfold>=0.38
+
+# Auditoria / histórico de alterações
+django-simple-history>=3.7
+
+# Importação e exportação de dados
+django-import-export>=3.3
+
+# Leitura de arquivos Word (.docx) para importação de conteúdo
+python-docx>=1.1
+
+# Criptografia simétrica (Fernet) — usada em ConfiguracaoEmail para a senha SMTP
+cryptography>=42.0

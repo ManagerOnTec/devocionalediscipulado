@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block titulo %}{{ modulo.titulo }} — {{ modulo.trilha.titulo }}{% endblock %}
+{% block meta_description %}{{ modulo.descricao|default:modulo.titulo|truncatechars:160 }}{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="Navegação estrutural" class="bg-body-tertiary border-bottom">
+    <div class="container">
+        <ol class="breadcrumb py-2 mb-0 small">
+            <li class="breadcrumb-item">
+                <a href="{% url 'core:home' %}" class="text-decoration-none">Início</a>
+            </li>
+            <li class="breadcrumb-item">
+                <a href="{% url 'estudo:lista_trilhas' %}" class="text-decoration-none">Estudos</a>
+            </li>
+            <li class="breadcrumb-item">
+                <a href="{% url 'estudo:detalhe_trilha' slug=modulo.trilha.slug %}" class="text-decoration-none">{{ modulo.trilha.titulo }}</a>
+            </li>
+            <li class="breadcrumb-item active" aria-current="page">{{ modulo.titulo }}</li>
+        </ol>
+    </div>
+</nav>
+{% endblock %}
+
+{% block content %}
+<article>
+
+    {# ── Imagem de capa ── #}
+    {% if modulo.imagem_capa %}
+    <div class="rounded-3 overflow-hidden mb-4" style="max-height: 260px;">
+        <img
+            src="{{ modulo.imagem_capa.url }}"
+            alt="Capa do módulo: {{ modulo.titulo }}"
+            class="w-100 object-fit-cover"
+            style="max-height: 260px;"
+            loading="lazy"
+        >
+    </div>
+    {% endif %}
+
+    {# ── Cabeçalho ── #}
+    <header class="mb-4">
+        <p class="text-body-secondary small mb-1">
+            <a href="{% url 'estudo:detalhe_trilha' slug=modulo.trilha.slug %}" class="text-decoration-none">
+                <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>{{ modulo.trilha.titulo }}
+            </a>
+        </p>
+        <h1 class="h2 fw-bold mb-2">
+            <i class="bi bi-collection me-2 text-primary" aria-hidden="true"></i>{{ modulo.titulo }}
+        </h1>
+        {% if modulo.descricao %}
+        <p class="lead text-body-secondary">{{ modulo.descricao }}</p>
+        {% endif %}
+    </header>
+
+    {# ── Lista de temas ── #}
+    <section aria-labelledby="temas-heading">
+        <h2 id="temas-heading" class="h5 fw-semibold mb-3">
+            <i class="bi bi-list-ul me-2 text-primary" aria-hidden="true"></i>Temas deste módulo
+        </h2>
+
+        {% if temas_progresso %}
+        <div class="list-group shadow-sm">
+            {% for item in temas_progresso %}
+            <a
+                href="{% url 'estudo:detalhe_tema' slug=item.obj.slug %}"
+                class="list-group-item list-group-item-action p-3 d-flex justify-content-between align-items-center"
+                aria-label="Tema {{ forloop.counter }}: {{ item.obj.titulo }}{% if item.concluido %} — concluído{% endif %}"
+            >
+                <div>
+                    <span class="fw-semibold">
+                        <span class="text-primary me-2" aria-hidden="true">{{ forloop.counter }}.</span>{{ item.obj.titulo }}
+                    </span>
+                    {% if item.obj.duracao_estimada %}
+                    <span class="text-muted small ms-2">
+                        <i class="bi bi-clock me-1" aria-hidden="true"></i>{{ item.obj.duracao_estimada }} min
+                    </span>
+                    {% endif %}
+                </div>
+
+                {% if item.concluido %}
+                <span class="badge text-bg-success flex-shrink-0 ms-2">
+                    <i class="bi bi-check-circle-fill me-1" aria-hidden="true"></i>Concluído
+                </span>
+                {% else %}
+                <i class="bi bi-chevron-right text-muted flex-shrink-0" aria-hidden="true"></i>
+                {% endif %}
+            </a>
+            {% endfor %}
+        </div>
+
+        {% else %}
+        {# ── Estado vazio ── #}
+        {% include "components/empty_state.html" with
+            icon="bi-list-ul"
+            titulo="Nenhum tema disponível"
+            mensagem="Este módulo ainda não possui temas publicados."
+        %}
+        {% endif %}
+
+    </section>
+
+</article>
+{% endblock %}

@@ -1,0 +1,197 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block title %}Confirmar Importação{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="{% url 'admin:index' %}">Início</a> &rsaquo;
+  <a href="{% url 'admin:estudo_trilha_changelist' %}">Trilhas</a> &rsaquo;
+  <a href="{% url 'admin:estudo_trilha_importar_docx' %}">Importar Word</a> &rsaquo;
+  Confirmar
+</div>
+{% endblock %}
+
+{% block extrastyle %}
+{{ block.super }}
+<style>
+  .import-card {
+    background:#fff;border:1px solid #dee2e6;border-radius:8px;
+    padding:1.25rem 1.5rem;margin-bottom:1.25rem;max-width:700px;
+  }
+  .import-card h3 { margin:0 0 .75rem;font-size:1rem;color:#495057; }
+  .preview-list { margin:0;padding-left:1.2rem;color:#555;font-size:.88rem; }
+  .preview-list li { margin:.2rem 0; }
+  .badge-info {
+    display:inline-block;background:#cfe2ff;color:#084298;
+    padding:.2em .55em;border-radius:.3rem;font-size:.8rem;font-weight:600;
+  }
+  .field-row { display:flex;flex-wrap:wrap;gap:1rem;margin-bottom:1rem; }
+  .field-row > div { flex:1;min-width:180px; }
+  label.field-label { display:block;font-weight:600;margin-bottom:.3rem;font-size:.9rem; }
+  select, input[type=text], input[type=number] {
+    width:100%;padding:.4rem .6rem;border:1px solid #ced4da;border-radius:4px;
+    font-size:.9rem;
+  }
+  .agrupamento-opts label {
+    display:flex;align-items:flex-start;gap:.5rem;
+    padding:.6rem .75rem;border:1px solid #dee2e6;border-radius:6px;
+    margin-bottom:.5rem;cursor:pointer;font-weight:normal;
+  }
+  .agrupamento-opts label:has(input:checked) {
+    border-color:#0d6efd;background:#f0f4ff;
+  }
+  .agrupamento-opts small { color:#6c757d;display:block;margin-top:.1rem; }
+  #grupos-config { margin-top:.5rem;padding:.75rem;background:#f8f9fa;border-radius:6px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<h1>Confirmar importação</h1>
+
+<p style="color:#555;">
+  Arquivo analisado com sucesso.
+  Encontrados <strong>{{ total_temas }}</strong> tema(s).
+  Configure abaixo e confirme para criar a trilha.
+</p>
+
+<form method="post" action="{% url 'admin:estudo_trilha_confirmar_import' %}">
+  {% csrf_token %}
+  <input type="hidden" name="temas_json" value="{{ temas_json }}">
+
+  <!-- ── Dados da Trilha ──────────────────────────────────────────────── -->
+  <div class="import-card">
+    <h3>📚 Dados da Trilha</h3>
+
+    <div class="field-row">
+      <div>
+        <label class="field-label" for="titulo_trilha">Título da Trilha <span style="color:red">*</span></label>
+        <input type="text" id="titulo_trilha" name="titulo_trilha"
+               value="{{ titulo_sugerido }}" required maxlength="200">
+      </div>
+    </div>
+
+    <div class="field-row">
+      <div>
+        <label class="field-label" for="tipo">Tipo</label>
+        <select id="tipo" name="tipo">
+          {% for val, label in tipo_choices %}
+            <option value="{{ val }}"{% if val == "DEVOCIONAL" %} selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="field-label" for="status">Status inicial</label>
+        <select id="status" name="status">
+          {% for val, label in status_choices %}
+            <option value="{{ val }}"{% if val == "RASCUNHO" %} selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="field-label" for="acesso">Acesso</label>
+        <select id="acesso" name="acesso">
+          {% for val, label in acesso_choices %}
+            <option value="{{ val }}"{% if val == "PUBLICO" %} selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Agrupamento em Módulos ───────────────────────────────────────── -->
+  <div class="import-card">
+    <h3>📦 Como agrupar os temas em módulos?</h3>
+
+    <div class="agrupamento-opts">
+
+      <label>
+        <input type="radio" name="agrupamento" value="UNICO" checked>
+        <div>
+          <strong>Um único módulo</strong>
+          <small>Todos os {{ total_temas }} temas em um módulo "Módulo 1".</small>
+        </div>
+      </label>
+
+      {% if topicos_unicos %}
+      <label>
+        <input type="radio" name="agrupamento" value="TOPICO">
+        <div>
+          <strong>Por tópico</strong>
+          <small>
+            Cada tópico distinto vira um módulo
+            ({{ topicos_unicos|length }} tópico(s) detectado(s):
+            {% for t in topicos_unicos|slice:":4" %}<em>{{ t }}</em>{% if not forloop.last %}, {% endif %}{% endfor %}{% if topicos_unicos|length > 4 %}…{% endif %}).
+          </small>
+        </div>
+      </label>
+      {% endif %}
+
+      <label>
+        <input type="radio" name="agrupamento" value="GRUPOS" id="opt-grupos">
+        <div>
+          <strong>Grupos de N temas</strong>
+          <small>Divide sequencialmente em grupos de tamanho fixo.</small>
+          <div id="grupos-config" style="display:none;margin-top:.5rem;">
+            <label class="field-label" for="tamanho_grupo" style="font-weight:normal;">
+              Temas por módulo:
+            </label>
+            <input type="number" id="tamanho_grupo" name="tamanho_grupo"
+                   value="5" min="1" max="{{ total_temas }}" style="width:80px;">
+          </div>
+        </div>
+      </label>
+
+    </div>
+  </div>
+
+  <!-- ── Preview dos primeiros temas ─────────────────────────────────── -->
+  <div class="import-card">
+    <h3>👁 Preview — primeiros temas detectados</h3>
+    <ul class="preview-list">
+      {% for tema in preview_temas %}
+      <li>
+        <strong>DIA {{ tema.num }} — {{ tema.titulo }}</strong>
+        {% if tema.topico %}<span class="badge-info">{{ tema.topico }}</span>{% endif %}
+        <br>
+        <span style="color:#888;">
+          {% if tema.texto_base %}✓ Texto Base{% endif %}
+          {% if tema.estudo %}&nbsp;✓ Devocional{% endif %}
+          {% if tema.oracao %}&nbsp;✓ Oração{% endif %}
+          {% if tema.referencias_cruzadas %}&nbsp;✓ Referências{% endif %}
+          {% if tema.conclusao %}&nbsp;✓ Conclusão{% endif %}
+        </span>
+      </li>
+      {% endfor %}
+      {% if total_temas > 5 %}
+      <li style="color:#6c757d;font-style:italic;">… e mais {{ total_temas|add:"-5" }} tema(s).</li>
+      {% endif %}
+    </ul>
+  </div>
+
+  <!-- ── Ações ─────────────────────────────────────────────────────────── -->
+  <div style="display:flex;gap:.75rem;align-items:center;max-width:700px;">
+    <input type="submit" value="✔ Criar trilha, módulos e temas" class="default"
+           onclick="return confirm('Confirma a importação de {{ total_temas }} tema(s)?')">
+    <a href="{% url 'admin:estudo_trilha_importar_docx' %}" style="color:#6c757d;">
+      ← Voltar e enviar outro arquivo
+    </a>
+  </div>
+
+</form>
+
+<script>
+(function () {
+  const radios = document.querySelectorAll('input[name="agrupamento"]');
+  const gruposConfig = document.getElementById('grupos-config');
+
+  function toggle() {
+    const isGrupos = document.getElementById('opt-grupos').checked;
+    gruposConfig.style.display = isGrupos ? 'block' : 'none';
+  }
+
+  radios.forEach(r => r.addEventListener('change', toggle));
+  toggle();
+})();
+</script>
+{% endblock %}

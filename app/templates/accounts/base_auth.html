@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% comment %}
+Template base compartilhado por todas as telas de autenticação.
+Fornece um layout de card centralizado e responsivo.
+
+Blocos disponíveis:
+  - auth_titulo     → título dentro do card
+  - auth_subtitulo  → subtítulo/descrição no card
+  - auth_form       → formulário principal
+  - auth_footer     → links abaixo do formulário
+{% endcomment %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-sm-10 col-md-8 col-lg-5 col-xl-4">
+        <div class="card shadow-sm mt-2 mt-md-4 border-0">
+            <div class="card-body p-4 p-md-5">
+
+                <!-- Cabeçalho do card -->
+                <div class="text-center mb-4">
+                    <i class="bi bi-book-half fs-1 text-primary"></i>
+                    <h1 class="h4 mt-2 mb-1 fw-bold">
+                        {% block auth_titulo %}{% endblock %}
+                    </h1>
+                    <p class="text-muted small mb-0">
+                        {% block auth_subtitulo %}{% endblock %}
+                    </p>
+                </div>
+
+                <!-- Formulário -->
+                {% block auth_form %}{% endblock %}
+
+                <!-- Rodapé do card (links auxiliares) -->
+                {% block auth_footer %}{% endblock %}
+
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

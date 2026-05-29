@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block titulo %}Estudos Disponíveis{% endblock %}
+{% block meta_description %}Explore trilhas de estudo devocional e discipulado disponíveis.{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="Navegação estrutural" class="bg-body-tertiary border-bottom">
+    <div class="container">
+        <ol class="breadcrumb py-2 mb-0 small">
+            <li class="breadcrumb-item">
+                <a href="{% url 'core:home' %}" class="text-decoration-none">Início</a>
+            </li>
+            <li class="breadcrumb-item active" aria-current="page">Estudos</li>
+        </ol>
+    </div>
+</nav>
+{% endblock %}
+
+{% block page_header %}
+<div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+    <div>
+        <h1 class="h3 fw-bold mb-1">
+            <i class="bi bi-journal-bookmark me-2 text-primary" aria-hidden="true"></i>Trilhas de Estudo
+        </h1>
+        <p class="text-body-secondary mb-0">Devocionais e discipulado em um único lugar.</p>
+    </div>
+    {% if user.is_authenticated %}
+    <a
+        href="{% url 'estudo:meu_progresso' %}"
+        class="btn btn-outline-primary btn-sm"
+        aria-label="Ver meu progresso"
+    >
+        <i class="bi bi-trophy me-1" aria-hidden="true"></i>Meu Progresso
+    </a>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block content %}
+
+{# ── Filtros por tipo ── #}
+{% regroup trilhas by get_tipo_display as trilhas_por_tipo %}
+
+{% if trilhas %}
+
+{% for grupo in trilhas_por_tipo %}
+<section class="mb-5" aria-labelledby="tipo-{{ forloop.counter }}">
+    <h2 id="tipo-{{ forloop.counter }}" class="h5 fw-semibold text-body-secondary border-bottom pb-2 mb-3">
+        {% if grupo.grouper == "Devocional" %}
+        <i class="bi bi-book me-2 text-primary" aria-hidden="true"></i>
+        {% else %}
+        <i class="bi bi-people me-2 text-success" aria-hidden="true"></i>
+        {% endif %}
+        {{ grupo.grouper }}
+    </h2>
+
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4" role="list" aria-label="Lista de trilhas {{ grupo.grouper }}">
+        {% for trilha in grupo.list %}
+        <div class="col" role="listitem">
+            <article class="card card-hover h-100 shadow-sm border-0">
+
+                {# ── Imagem de capa do primeiro módulo ── #}
+                {% with first_modulo=trilha.modulos.first %}
+                {% if first_modulo and first_modulo.imagem_capa %}
+                <img
+                    src="{{ first_modulo.imagem_capa.url }}"
+                    alt="Capa da trilha: {{ trilha.titulo }}"
+                    class="card-img-top object-fit-cover"
+                    style="height: 180px;"
+                    loading="lazy"
+                >
+                {% else %}
+                <div
+                    class="card-img-top d-flex align-items-center justify-content-center bg-primary bg-opacity-10"
+                    style="height: 180px;"
+                    aria-hidden="true"
+                >
+                    {% if trilha.tipo == "DEVOCIONAL" %}
+                    <i class="bi bi-book display-4 text-primary"></i>
+                    {% else %}
+                    <i class="bi bi-people display-4 text-success"></i>
+                    {% endif %}
+                </div>
+                {% endif %}
+                {% endwith %}
+
+                <div class="card-body d-flex flex-column">
+                    {# ── Badge de tipo ── #}
+                    <span class="badge {% if trilha.tipo == 'DEVOCIONAL' %}text-bg-primary{% else %}text-bg-success{% endif %} mb-2 align-self-start">
+                        {{ trilha.get_tipo_display }}
+                    </span>
+
+                    {# ── Título ── #}
+                    <h3 class="card-title h6 fw-semibold mb-2">{{ trilha.titulo }}</h3>
+
+                    {# ── Descrição truncada ── #}
+                    {% if trilha.descricao %}
+                    <p class="card-text text-body-secondary small flex-grow-1">
+                        {{ trilha.descricao|truncatechars:140 }}
+                    </p>
+                    {% else %}
+                    <div class="flex-grow-1"></div>
+                    {% endif %}
+
+                    {# ── Contagem de módulos ── #}
+                    <p class="text-muted small mb-2">
+                        <i class="bi bi-grid me-1" aria-hidden="true"></i>
+                        {{ trilha.modulos.count }} módulo{{ trilha.modulos.count|pluralize }}
+                    </p>
+
+                    {# ── Botão ── #}
+                    <a
+                        href="{% url 'estudo:detalhe_trilha' slug=trilha.slug %}"
+                        class="btn btn-primary btn-sm mt-auto stretched-link"
+                        aria-label="Acessar trilha: {{ trilha.titulo }}"
+                    >
+                        <i class="bi bi-play-circle me-1" aria-hidden="true"></i>Acessar
+                    </a>
+                </div>
+
+            </article>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+{% endfor %}
+
+{% else %}
+{# ── Estado vazio ── #}
+{% include "components/empty_state.html" with icon="bi-journal-bookmark" titulo="Nenhum estudo disponível ainda" mensagem="Em breve novas trilhas de estudo estarão disponíveis. Volte mais tarde." %}
+{% endif %}
+
+{% endblock %}

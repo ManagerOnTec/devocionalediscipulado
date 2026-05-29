@@ -1,0 +1,146 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+{% comment %}
+Dashboard personalizado do admin — Devocional e Discipulado.
+
+Estende o base do admin (fornecido pelo django-unfold) e adiciona:
+  - Cards de indicadores KPI (injetados via DASHBOARD_CALLBACK)
+  - Grade de modelos disponíveis por aplicativo
+
+Dados de contexto esperados (via UNFOLD.DASHBOARD_CALLBACK):
+  - indicators: lista de dicts {title, metric, icon, description}
+  - app_list:   lista padrão do Django admin
+
+Template tags usadas: i18n
+{% endcomment %}
+
+{% block title %}Dashboard | {{ site_title }}{% endblock %}
+
+{% block content %}
+
+{# ── Cards de indicadores KPI ─────────────────────────────────────────────── #}
+{% if indicators %}
+<div style="
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.25rem;
+    margin-bottom: 2rem;
+">
+    {% for card in indicators %}
+    <div style="
+        background: var(--darkmode-bg-1, #ffffff);
+        border: 1px solid var(--hairline-color, #e5e7eb);
+        border-radius: 0.75rem;
+        padding: 1.25rem 1.5rem;
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,.06);
+        transition: box-shadow .2s;
+    ">
+        <span class="material-symbols-outlined" style="
+            font-size: 2.5rem;
+            color: var(--primary-500, #3b82f6);
+            flex-shrink: 0;
+            line-height: 1;
+        " aria-hidden="true">{{ card.icon }}</span>
+
+        <div style="min-width: 0; flex: 1;">
+            <p style="margin: 0 0 .25rem; font-size: .75rem; font-weight: 600;
+                      text-transform: uppercase; letter-spacing: .05em;
+                      color: var(--default-font-color-subtle, #6b7280); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                {{ card.title }}
+            </p>
+            <p style="margin: 0 0 .25rem; font-size: 2rem; font-weight: 700; line-height: 1;
+                      color: var(--default-font-color, #111827);">
+                {{ card.metric }}
+            </p>
+            <p style="margin: 0; font-size: .7rem; color: var(--default-font-color-subtle, #9ca3af);
+                      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                {{ card.description }}
+            </p>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+{# ── Grade de modelos por aplicativo ─────────────────────────────────────── #}
+{% if app_list %}
+    {% for app in app_list %}
+    <div style="margin-bottom: 2rem;">
+        <h2 style="
+            font-size: .7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .07em;
+            color: var(--default-font-color-subtle, #6b7280);
+            margin: 0 0 .75rem;
+            padding-bottom: .5rem;
+            border-bottom: 1px solid var(--hairline-color, #e5e7eb);
+        ">
+            <a href="{{ app.app_url }}" style="color: inherit; text-decoration: none;">
+                {{ app.name }}
+            </a>
+        </h2>
+
+        <div style="
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: .75rem;
+        ">
+            {% for model in app.models %}
+            <div style="
+                background: var(--darkmode-bg-1, #ffffff);
+                border: 1px solid var(--hairline-color, #e5e7eb);
+                border-radius: .5rem;
+                padding: .875rem 1rem;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                transition: border-color .15s, box-shadow .15s;
+            ">
+                <div style="min-width: 0; flex: 1;">
+                    {% if model.admin_url %}
+                    <a href="{{ model.admin_url }}" style="
+                        font-size: .875rem;
+                        font-weight: 500;
+                        color: var(--default-font-color, #111827);
+                        text-decoration: none;
+                        display: block;
+                        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+                    ">{{ model.name }}</a>
+                    {% else %}
+                    <span style="font-size: .875rem; font-weight: 500; color: var(--default-font-color, #111827);">
+                        {{ model.name }}
+                    </span>
+                    {% endif %}
+                </div>
+
+                {% if model.add_url %}
+                <a href="{{ model.add_url }}"
+                   title="{% blocktranslate with name=model.name %}Adicionar {{ name }}{% endblocktranslate %}"
+                   style="
+                       margin-left: .5rem;
+                       color: var(--primary-500, #3b82f6);
+                       flex-shrink: 0;
+                       display: flex;
+                       align-items: center;
+                       text-decoration: none;
+                   ">
+                    <span class="material-symbols-outlined" style="font-size: 1.25rem;" aria-hidden="true">add_circle</span>
+                </a>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endfor %}
+
+{% else %}
+    <p style="color: var(--default-font-color-subtle, #6b7280);">
+        {% translate "You don't have permission to view or edit anything." %}
+    </p>
+{% endif %}
+
+{% endblock %}

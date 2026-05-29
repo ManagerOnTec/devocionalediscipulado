@@ -1,0 +1,53 @@
+# ── Git ───────────────────────────────────────────────────────────────────────
+.git
+.gitignore
+.github/
+
+# ── Python ────────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyc
+*.pyo
+*.so
+.Python
+
+# ── Ambientes virtuais ────────────────────────────────────────────────────────
+env/
+venv/
+.venv/
+*.egg-info/
+
+# ── Django / desenvolvimento ──────────────────────────────────────────────────
+*.log
+db.sqlite3
+local_settings.py
+
+# ── Arquivos de mídia (montados como volume, não incluídos na imagem) ─────────
+media/
+
+# ── Variáveis de ambiente ─────────────────────────────────────────────────────
+.env
+.env.*
+
+# ── IDE ───────────────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# ── Testes / Cobertura ────────────────────────────────────────────────────────
+.coverage
+htmlcov/
+.pytest_cache/
+tests/
+
+# ── Documentação ──────────────────────────────────────────────────────────────
+docs/
+*.md
+
+# ── Docker Compose (apenas para orquestração local) ───────────────────────────
+docker-compose*.yml
+
+# ── Zone identifier (Windows WSL) ────────────────────────────────────────────
+*.Zone.Identifier

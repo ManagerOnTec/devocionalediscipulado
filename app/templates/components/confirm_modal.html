@@ -1,0 +1,71 @@
+{% comment %}
+Componente de modal de confirmação para ações destrutivas.
+
+Uso:
+  1. Inclua o modal no template (fora de qualquer formulário):
+     {% include 'components/confirm_modal.html' with
+         modal_id="modal-excluir"
+         titulo="Excluir item"
+         mensagem="Esta ação é permanente e não poderá ser desfeita."
+         form_action=objeto.get_absolute_url
+         btn_label="Excluir"
+         btn_class="btn-danger"
+     %}
+
+  2. No botão que abre o modal:
+     <button type="button" data-bs-toggle="modal" data-bs-target="#modal-excluir">Excluir</button>
+
+Parâmetros:
+  modal_id     → id único do modal na página (obrigatório)
+  titulo       → título do modal (padrão: "Confirmar ação")
+  mensagem     → mensagem de aviso ao usuário (padrão genérico)
+  form_action  → atributo action do formulário POST (obrigatório)
+  btn_label    → texto do botão de confirmação (padrão: "Confirmar")
+  btn_class    → classe CSS do botão (padrão: "btn-danger")
+{% endcomment %}
+{% load static %}
+<div
+    class="modal fade"
+    id="{{ modal_id }}"
+    tabindex="-1"
+    aria-labelledby="{{ modal_id }}-label"
+    aria-modal="true"
+    role="dialog"
+>
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h2 class="modal-title fs-5" id="{{ modal_id }}-label">
+                    <i class="bi bi-exclamation-triangle-fill text-warning me-2" aria-hidden="true"></i>
+                    {{ titulo|default:'Confirmar ação' }}
+                </h2>
+                <button
+                    type="button"
+                    class="btn-close"
+                    data-bs-dismiss="modal"
+                    aria-label="Fechar"
+                ></button>
+            </div>
+
+            <div class="modal-body">
+                <p class="mb-0">
+                    {{ mensagem|default:'Tem certeza que deseja continuar? Esta ação não pode ser desfeita.' }}
+                </p>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-lg me-1" aria-hidden="true"></i>Cancelar
+                </button>
+                <form method="post" action="{{ form_action }}" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn {{ btn_class|default:'btn-danger' }}">
+                        <i class="bi bi-check-lg me-1" aria-hidden="true"></i>{{ btn_label|default:'Confirmar' }}
+                    </button>
+                </form>
+            </div>
+
+        </div>
+    </div>
+</div>

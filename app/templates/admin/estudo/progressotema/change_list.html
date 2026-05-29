@@ -1,0 +1,62 @@
+{% extends "admin/change_list.html" %}
+{% load i18n %}
+{% comment %}
+Changelist customizada para ProgressoTema.
+Exibe cards KPI de progresso acima da tabela de resultados.
+
+Dados injetados via ProgressoTemaAdmin.changelist_view:
+  kpi_progresso → lista de dicts {title, metric, icon, description}
+{% endcomment %}
+
+{% block content %}
+
+{% if kpi_progresso %}
+<div style="
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.75rem;
+">
+    {% for card in kpi_progresso %}
+    <div style="
+        background: var(--darkmode-bg-1, #ffffff);
+        border: 1px solid var(--hairline-color, #e5e7eb);
+        border-radius: 0.75rem;
+        padding: 1.125rem 1.25rem;
+        display: flex;
+        align-items: flex-start;
+        gap: .875rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,.06);
+    ">
+        <span class="material-symbols-outlined" style="
+            font-size: 2.25rem;
+            color: var(--primary-500, #3b82f6);
+            flex-shrink: 0;
+            line-height: 1;
+        " aria-hidden="true">{{ card.icon }}</span>
+
+        <div style="min-width: 0; flex: 1;">
+            <p style="margin: 0 0 .2rem; font-size: .7rem; font-weight: 600;
+                      text-transform: uppercase; letter-spacing: .05em;
+                      color: var(--default-font-color-subtle, #6b7280);
+                      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                {{ card.title }}
+            </p>
+            <p style="margin: 0 0 .2rem; font-size: 1.75rem; font-weight: 700; line-height: 1;
+                      color: var(--default-font-color, #111827);">
+                {{ card.metric }}
+            </p>
+            <p style="margin: 0; font-size: .68rem;
+                      color: var(--default-font-color-subtle, #9ca3af);
+                      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                {{ card.description }}
+            </p>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+{{ block.super }}
+
+{% endblock %}

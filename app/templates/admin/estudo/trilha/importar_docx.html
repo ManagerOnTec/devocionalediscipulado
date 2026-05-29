@@ -1,0 +1,67 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block title %}Importar Estudo via Word{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="{% url 'admin:index' %}">Início</a> &rsaquo;
+  <a href="{% url 'admin:estudo_trilha_changelist' %}">Trilhas</a> &rsaquo;
+  Importar Word
+</div>
+{% endblock %}
+
+{% block content %}
+<h1>Importar Estudo via Word (.docx)</h1>
+
+<p style="color:#555;margin-bottom:1.5rem;">
+  Faça o upload de um arquivo <strong>.docx</strong> estruturado com títulos
+  <code>DIA X — Título</code> em negrito. O sistema detectará automaticamente
+  temas, textos e orações, e perguntará como agrupar em módulos.
+</p>
+
+<div style="background:#f8f9fa;border:1px solid #dee2e6;border-radius:6px;padding:1.5rem;max-width:560px;">
+  <form method="post" enctype="multipart/form-data" action="">
+    {% csrf_token %}
+
+    <div style="margin-bottom:1.2rem;">
+      <label for="arquivo" style="display:block;font-weight:600;margin-bottom:.4rem;">
+        Arquivo Word (.docx)
+      </label>
+      <input
+        type="file"
+        id="arquivo"
+        name="arquivo"
+        accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        required
+        style="width:100%;"
+      >
+      <small style="color:#6c757d;display:block;margin-top:.3rem;">
+        Estrutura esperada: parágrafos em negrito marcam <em>DIA X&nbsp;— Título</em>,
+        <em>Texto Base</em>, <em>Devocional</em>, <em>Oração</em>, etc.
+      </small>
+    </div>
+
+    <div style="display:flex;gap:.75rem;align-items:center;">
+      <input type="submit" value="Analisar arquivo →" class="default">
+      <a href="{% url 'admin:estudo_trilha_changelist' %}" style="color:#6c757d;">Cancelar</a>
+    </div>
+  </form>
+</div>
+
+<div style="margin-top:2rem;background:#fff8e1;border:1px solid #ffe082;border-radius:6px;padding:1rem;max-width:560px;">
+  <strong>Estrutura reconhecida:</strong>
+  <pre style="margin:.5rem 0 0;font-size:.82rem;line-height:1.6;">
+<b>DIA 1 — Título do Tema</b>          ← título do tema
+<b>Tópico</b>
+Nome do Tópico                   ← agrupamento em módulos
+<b>Texto Base</b>
+"Versículo..."                   ← texto_base
+<b>Devocional</b>
+Parágrafo 1...                   ← conteúdo de estudo
+<b>Oração</b>
+Texto da oração...               ← oração
+  </pre>
+  <small style="color:#666;">Também detecta: <em>Referências, Conclusão, Exemplo</em>.</small>
+</div>
+{% endblock %}

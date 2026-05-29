@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40">
+  <!--
+    Logo — livro aberto, 40×40
+    Fundo arredondado slate-900 (#0f172a); livro branco.
+    Funciona sobre barras laterais claras ou escuras.
+  -->
+
+  <!-- Fundo -->
+  <rect width="40" height="40" rx="8" fill="#0f172a"/>
+
+  <!-- Página esquerda -->
+  <path d="M4 32 L4 12 Q4 10 6.5 10 L18.5 11.5 L18.5 33.5 L6.5 32.5 Q4 32.5 4 30.5 Z"
+        fill="white" opacity="0.90"/>
+
+  <!-- Página direita -->
+  <path d="M36 32 L36 12 Q36 10 33.5 10 L21.5 11.5 L21.5 33.5 L33.5 32.5 Q36 32.5 36 30.5 Z"
+        fill="white" opacity="0.65"/>
+
+  <!-- Lombada / spine -->
+  <rect x="17.5" y="9.5" width="5" height="25" rx="0.5" fill="#0f172a"/>
+
+  <!-- Linhas de texto — página esquerda -->
+  <line x1="7"  y1="16"   x2="17" y2="15.5" stroke="#475569" stroke-width="1.4" stroke-linecap="round"/>
+  <line x1="7"  y1="20"   x2="17" y2="19.5" stroke="#475569" stroke-width="1.4" stroke-linecap="round"/>
+  <line x1="7"  y1="24"   x2="17" y2="23.5" stroke="#475569" stroke-width="1.4" stroke-linecap="round"/>
+
+  <!-- Linhas de texto — página direita -->
+  <line x1="23" y1="15.5" x2="33" y2="16"   stroke="#6b7280" stroke-width="1.4" stroke-linecap="round"/>
+  <line x1="23" y1="19.5" x2="33" y2="20"   stroke="#6b7280" stroke-width="1.4" stroke-linecap="round"/>
+  <line x1="23" y1="23.5" x2="33" y2="24"   stroke="#6b7280" stroke-width="1.4" stroke-linecap="round"/>
+</svg>

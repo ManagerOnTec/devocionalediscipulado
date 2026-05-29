@@ -1,0 +1,95 @@
+{% comment %}
+Componente de paginação Bootstrap acessível.
+
+Uso:
+  {% include 'components/pagination.html' with page_obj=page_obj %}
+
+Parâmetro:
+  page_obj → objeto Page do Django Paginator (ex: retornado por ListView)
+
+Preserva querystring: se a view aceita outros parâmetros (ex: ?q=busca),
+use o bloco extra_js do base.html para atualizar os hrefs via JS, ou
+implemente a lógica de querystring na view e passe o parâmetro
+`query_params` (string no formato "q=busca&") para ser prefixado.
+{% endcomment %}
+{% if page_obj.has_other_pages %}
+<nav aria-label="Navegação de páginas" class="mt-4">
+    <ul class="pagination justify-content-center flex-wrap gap-1">
+
+        {# Primeira página #}
+        <li class="page-item{% if not page_obj.has_previous %} disabled{% endif %}">
+            <a
+                class="page-link"
+                href="{% if page_obj.has_previous %}?{{ query_params }}page=1{% else %}#{% endif %}"
+                aria-label="Primeira página"
+                {% if not page_obj.has_previous %}aria-disabled="true"{% endif %}
+            >
+                <i class="bi bi-chevron-double-left" aria-hidden="true"></i>
+            </a>
+        </li>
+
+        {# Página anterior #}
+        <li class="page-item{% if not page_obj.has_previous %} disabled{% endif %}">
+            <a
+                class="page-link"
+                href="{% if page_obj.has_previous %}?{{ query_params }}page={{ page_obj.previous_page_number }}{% else %}#{% endif %}"
+                aria-label="Página anterior"
+                {% if not page_obj.has_previous %}aria-disabled="true"{% endif %}
+            >
+                <i class="bi bi-chevron-left" aria-hidden="true"></i>
+            </a>
+        </li>
+
+        {# Números de página com elipses #}
+        {% for num in page_obj.paginator.page_range %}
+            {% if page_obj.number == num %}
+            <li class="page-item active" aria-current="page">
+                <span class="page-link">{{ num }}</span>
+            </li>
+            {% elif num == 1 or num == page_obj.paginator.num_pages %}
+            <li class="page-item">
+                <a class="page-link" href="?{{ query_params }}page={{ num }}" aria-label="Página {{ num }}">{{ num }}</a>
+            </li>
+            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+            <li class="page-item">
+                <a class="page-link" href="?{{ query_params }}page={{ num }}" aria-label="Página {{ num }}">{{ num }}</a>
+            </li>
+            {% elif num == page_obj.number|add:'-3' or num == page_obj.number|add:'3' %}
+            <li class="page-item disabled" aria-hidden="true">
+                <span class="page-link">…</span>
+            </li>
+            {% endif %}
+        {% endfor %}
+
+        {# Próxima página #}
+        <li class="page-item{% if not page_obj.has_next %} disabled{% endif %}">
+            <a
+                class="page-link"
+                href="{% if page_obj.has_next %}?{{ query_params }}page={{ page_obj.next_page_number }}{% else %}#{% endif %}"
+                aria-label="Próxima página"
+                {% if not page_obj.has_next %}aria-disabled="true"{% endif %}
+            >
+                <i class="bi bi-chevron-right" aria-hidden="true"></i>
+            </a>
+        </li>
+
+        {# Última página #}
+        <li class="page-item{% if not page_obj.has_next %} disabled{% endif %}">
+            <a
+                class="page-link"
+                href="{% if page_obj.has_next %}?{{ query_params }}page={{ page_obj.paginator.num_pages }}{% else %}#{% endif %}"
+                aria-label="Última página"
+                {% if not page_obj.has_next %}aria-disabled="true"{% endif %}
+            >
+                <i class="bi bi-chevron-double-right" aria-hidden="true"></i>
+            </a>
+        </li>
+
+    </ul>
+
+    <p class="text-center text-muted small mt-1" aria-live="polite">
+        Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+        &mdash; {{ page_obj.paginator.count }} resultado{{ page_obj.paginator.count|pluralize }}
+    </p>
+</nav>
+{% endif %}
