@@ -8,11 +8,16 @@ Uso:
     DJANGO_SETTINGS_MODULE=config.settings.prod
 """
 
+from datetime import timedelta
+
 import sentry_sdk
 from decouple import config
 from sentry_sdk.integrations.django import DjangoIntegration
 
 from .base import *  # noqa: F401, F403
+
+
+
 
 # ─── Debug ────────────────────────────────────────────────────────────────────
 
@@ -75,20 +80,22 @@ DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL", default="noreply@example.com")
 GS_BUCKET_NAME = config("GS_BUCKET_NAME", default="")
 
 if GS_BUCKET_NAME:
-    GS_DEFAULT_ACL = None          # Usa IAM do bucket (sem ACL pública exposta)
-    GS_QUERYSTRING_AUTH = False    # URLs sem token (bucket é público via IAM Conditions)
-    GS_FILE_OVERWRITE = False      # Nunca sobrescreve arquivos com mesmo nome
-    GS_MAX_MEMORY_SIZE = 5 * 1024 * 1024  # 5 MB — acima disso usa arquivo temp
+    GS_DEFAULT_ACL = None                      # Sem ACL pública — acesso via URLs assinadas
+    GS_QUERYSTRING_AUTH = True                 # Gera URLs assinadas temporárias
+    GS_EXPIRATION = timedelta(minutes=30)      # Validade das URLs assinadas
+    GS_FILE_OVERWRITE = False                  # Nunca sobrescreve arquivos com mesmo nome
+    GS_MAX_MEMORY_SIZE = 5 * 1024 * 1024      # 5 MB — acima disso usa arquivo temp
 
+    # Django 5: usa STORAGES dict (DEFAULT_FILE_STORAGE foi removido)
     STORAGES = {
         "default": {
-            "BACKEND": "storages.backends.gcloud.GoogleCloudStorage",
+            "BACKEND": "config.storage_backends.PrivateMediaStorage",
         },
         "staticfiles": {
-            # Estáticos continuam sendo servidos pelo WhiteNoise
             "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
         },
     }
+    # MEDIA_URL é fallback; URLs reais vêm de storage.url() (assinadas)
     MEDIA_URL = f"https://storage.googleapis.com/{GS_BUCKET_NAME}/"
 
 # ─── Logs de produção ────────────────────────────────────────────────────────
