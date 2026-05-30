@@ -231,22 +231,50 @@ class Modulo(BaseModel):
     def _redimensionar_capa(self):
         """
         Redimensiona a imagem de capa para 800×450 px (proporção 16:9),
-        cortando o excesso centralmente (equivalente a object-fit: cover).
+        cortando o excesso centralmente. Compatível com GCS (GS_FILE_OVERWRITE=False).
         """
         from PIL import Image, ImageOps
+        from django.core.files.base import ContentFile
+        import io
+        import os
 
-        caminho = self.imagem_capa.path
-        ext = os.path.splitext(caminho)[1].lower()
+        # 1. Carrega a imagem original em memória enquanto o handle está aberto
+        with self.imagem_capa.open('rb') as f:
+            img = Image.open(f)
+            img.load()  # força leitura completa antes de fechar o handle
+
+        ext = os.path.splitext(self.imagem_capa.name)[1].lower()
         fmt = "PNG" if ext == ".png" else "JPEG"
 
-        with Image.open(caminho) as img:
-            if fmt == "JPEG" and img.mode != "RGB":
-                img = img.convert("RGB")
-            img_final = ImageOps.fit(img, (800, 450), Image.LANCZOS)
-            save_kwargs = {"optimize": True}
-            if fmt == "JPEG":
-                save_kwargs["quality"] = 85
-            img_final.save(caminho, format=fmt, **save_kwargs)
+        if fmt == "JPEG" and img.mode != "RGB":
+            img = img.convert("RGB")
+
+        # 2. Redimensiona com corte central (16:9)
+        img_final = ImageOps.fit(img, (800, 450), Image.LANCZOS)
+
+        # 3. Serializa em memória
+        buffer = io.BytesIO()
+        save_kwargs = {"optimize": True}
+        if fmt == "JPEG":
+            save_kwargs["quality"] = 85
+        img_final.save(buffer, format=fmt, **save_kwargs)
+
+        # 4. Substitui o arquivo no GCS
+        #    FieldFile.save() não é usado porque ele aplica upload_to via
+        #    generate_filename(), dobrando o prefixo do caminho.
+        #    Com GS_FILE_OVERWRITE=False, exclui antes para que o storage
+        #    reutilize o mesmo nome sem adicionar sufixo único.
+        nome_arquivo = self.imagem_capa.name
+        self.imagem_capa.storage.delete(nome_arquivo)
+        novo_nome = self.imagem_capa.storage.save(
+            nome_arquivo,
+            ContentFile(buffer.getvalue()),
+        )
+        # Atualiza somente se o storage gerou um nome diferente (cenário raro)
+        if novo_nome != nome_arquivo:
+            self.imagem_capa.name = novo_nome
+            Modulo.objects.filter(pk=self.pk).update(imagem_capa=novo_nome)
+
 
     def esta_desbloqueado(self, usuario) -> bool:
         """O primeiro módulo da trilha é sempre desbloqueado.
