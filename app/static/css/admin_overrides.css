@@ -1,0 +1,68 @@
+/*
+ * admin_overrides.css — Ajustes visuais do painel admin (django-unfold)
+ * Melhora contraste de bordas dos campos em modo light e dark.
+ */
+
+/* ── Campos de formulário — modo claro ───────────────────────────────────── */
+input[type="text"],
+input[type="email"],
+input[type="url"],
+input[type="number"],
+input[type="password"],
+input[type="search"],
+input[type="tel"],
+input[type="date"],
+input[type="datetime-local"],
+input[type="time"],
+textarea,
+select {
+    border-color: #9ca3af !important; /* gray-400 — visível sobre fundo branco */
+}
+
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="url"]:focus,
+input[type="number"]:focus,
+input[type="password"]:focus,
+input[type="search"]:focus,
+input[type="tel"]:focus,
+input[type="date"]:focus,
+input[type="datetime-local"]:focus,
+input[type="time"]:focus,
+textarea:focus,
+select:focus {
+    border-color: #3b82f6 !important; /* primary-500 — destaque no foco */
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25) !important;
+}
+
+/* ── Campos de formulário — modo escuro ──────────────────────────────────── */
+.dark input[type="text"],
+.dark input[type="email"],
+.dark input[type="url"],
+.dark input[type="number"],
+.dark input[type="password"],
+.dark input[type="search"],
+.dark input[type="tel"],
+.dark input[type="date"],
+.dark input[type="datetime-local"],
+.dark input[type="time"],
+.dark textarea,
+.dark select {
+    border-color: #6b7280 !important; /* gray-500 — visível sobre fundo escuro */
+}
+
+.dark input[type="text"]:focus,
+.dark input[type="email"]:focus,
+.dark input[type="url"]:focus,
+.dark input[type="number"]:focus,
+.dark input[type="password"]:focus,
+.dark input[type="search"]:focus,
+.dark input[type="tel"]:focus,
+.dark input[type="date"]:focus,
+.dark input[type="datetime-local"]:focus,
+.dark input[type="time"]:focus,
+.dark textarea:focus,
+.dark select:focus {
+    border-color: #60a5fa !important; /* primary-400 — mais claro para dark mode */
+    box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.25) !important;
+}

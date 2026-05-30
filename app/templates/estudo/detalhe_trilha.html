@@ -144,11 +144,7 @@
 
         {% else %}
         {# ── Estado vazio ── #}
-        {% include "components/empty_state.html" with
-            icon="bi-grid-3x3-gap"
-            titulo="Nenhum módulo disponível"
-            mensagem="Esta trilha ainda não possui módulos publicados."
-        %}
+        {% include "components/empty_state.html" with icon="bi-grid-3x3-gap" titulo="Nenhum módulo disponível" mensagem="Esta trilha ainda não possui módulos publicados." %}
         {% endif %}
 
     </section>

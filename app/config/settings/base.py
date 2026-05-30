@@ -248,6 +248,11 @@ LOGOUT_REDIRECT_URL = "accounts:login"
 # ─── Django Unfold Admin ──────────────────────────────────────────────────────
 
 UNFOLD = {
+    # ── CSS customizado injetado no admin ─────────────────────────────────
+    "STYLES": [
+        lambda request: static("css/admin_overrides.css"),
+    ],
+
     # ── Identidade do site ────────────────────────────────────────────────
     "SITE_TITLE": "Devocional e Discipulado",
     "SITE_HEADER": "Devocional e Discipulado",

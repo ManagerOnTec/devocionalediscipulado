@@ -92,11 +92,7 @@
 
         {% else %}
         {# ── Estado vazio ── #}
-        {% include "components/empty_state.html" with
-            icon="bi-list-ul"
-            titulo="Nenhum tema disponível"
-            mensagem="Este módulo ainda não possui temas publicados."
-        %}
+        {% include "components/empty_state.html" with icon="bi-list-ul" titulo="Nenhum tema disponível" mensagem="Este módulo ainda não possui temas publicados." %}
         {% endif %}
 
     </section>

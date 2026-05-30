@@ -134,14 +134,7 @@
 {% else %}
 {# ── Estado vazio ── #}
 {% url 'estudo:lista_trilhas' as url_lista %}
-{% include "components/empty_state.html" with
-    icon="bi-trophy"
-    titulo="Nenhum estudo disponível"
-    mensagem="Não há trilhas publicadas no momento. Volte em breve."
-    btn_url=url_lista
-    btn_label="Explorar Estudos"
-    btn_icon="bi-journal-bookmark"
-%}
+{% include "components/empty_state.html" with icon="bi-trophy" titulo="Nenhum estudo disponível" mensagem="Não há trilhas publicadas no momento. Volte em breve." btn_url=url_lista btn_label="Explorar Estudos" btn_icon="bi-journal-bookmark" %}
 {% endif %}
 
 {% endblock %}
