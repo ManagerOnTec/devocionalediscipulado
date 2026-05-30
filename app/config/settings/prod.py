@@ -96,7 +96,7 @@ if GS_BUCKET_NAME:
             "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
         },
     }
-    MEDIA_URL = f"https://storage.googleapis.com/{GS_BUCKET_NAME}/media/"
+    MEDIA_URL = f"https://storage.googleapis.com/{GS_BUCKET_NAME}/"
 
 # ─── Logs de produção ────────────────────────────────────────────────────────
 
