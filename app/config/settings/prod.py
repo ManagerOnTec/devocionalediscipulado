@@ -80,13 +80,14 @@ DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL", default="noreply@example.com")
 GS_BUCKET_NAME = config("GS_BUCKET_NAME", default="")
 
 if GS_BUCKET_NAME:
+    GS_PROJECT_ID = config("GS_PROJECT_ID", default="")
     GS_DEFAULT_ACL = None                      # Sem ACL pública — acesso via URLs assinadas
-    GS_QUERYSTRING_AUTH = False                 # Gera URLs assinadas temporárias
-    GS_EXPIRATION = timedelta(minutes=30)      # Validade das URLs assinadas
+    GS_QUERYSTRING_AUTH = True                 # Gera URLs assinadas temporárias
+    GS_EXPIRATION = timedelta(minutes=120)     # Validade das URLs assinadas
     GS_FILE_OVERWRITE = False                  # Nunca sobrescreve arquivos com mesmo nome
     GS_MAX_MEMORY_SIZE = 5 * 1024 * 1024      # 5 MB — acima disso usa arquivo temp
 
-    # Django 5: usa STORAGES dict (DEFAULT_FILE_STORAGE foi removido)
+    # Django 5: STORAGES dict substitui DEFAULT_FILE_STORAGE e STATICFILES_STORAGE
     STORAGES = {
         "default": {
             "BACKEND": "config.storage_backends.PrivateMediaStorage",
@@ -95,8 +96,7 @@ if GS_BUCKET_NAME:
             "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
         },
     }
-    # MEDIA_URL é fallback; URLs reais vêm de storage.url() (assinadas)
-    MEDIA_URL = f"https://storage.googleapis.com/{GS_BUCKET_NAME}/"
+    MEDIA_URL = f"https://storage.googleapis.com/{GS_BUCKET_NAME}/media/"
 
 # ─── Logs de produção ────────────────────────────────────────────────────────
 

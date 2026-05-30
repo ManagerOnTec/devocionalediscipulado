@@ -169,7 +169,7 @@ class Modulo(BaseModel):
     # Imagem fica apenas no Módulo — não nos temas individuais
     # Convenção: 800×450 px (16:9) — redimensionada automaticamente ao salvar.
     imagem_capa = models.ImageField(
-        upload_to="estudo/modulos/%Y/%m/",
+        upload_to="estudo/modulos/",
         null=True,
         blank=True,
         verbose_name="Imagem de Capa",
