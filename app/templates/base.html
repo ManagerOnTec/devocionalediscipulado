@@ -186,8 +186,11 @@ Blocos disponíveis:
                     <a href="{% url 'accounts:login' %}" class="text-muted small me-3">
                         <i class="bi bi-box-arrow-in-right me-1" aria-hidden="true"></i>Entrar
                     </a>
-                    <a href="{% url 'accounts:cadastro' %}" class="text-muted small">
+                    <a href="{% url 'accounts:cadastro' %}" class="text-muted small me-3">
                         <i class="bi bi-person-plus me-1" aria-hidden="true"></i>Cadastro
+                    </a>
+                    <a href="{% url 'admin:index' %}" class="text-muted small">
+                        <i class="bi bi-shield-lock me-1" aria-hidden="true"></i>Admin
                     </a>
                 </nav>
                 {% endif %}
