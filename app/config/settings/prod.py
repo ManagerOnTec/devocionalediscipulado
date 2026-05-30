@@ -75,8 +75,9 @@ DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL", default="noreply@example.com")
 GS_BUCKET_NAME = config("GS_BUCKET_NAME", default="")
 
 if GS_BUCKET_NAME:
-    GS_DEFAULT_ACL = None          # Usa IAM do bucket (sem ACL pública exposta)
-    GS_QUERYSTRING_AUTH = False    # URLs sem token (bucket é público via IAM Conditions)
+    GS_DEFAULT_ACL = None          # Sem ACL pública — acesso via URLs assinadas
+    GS_QUERYSTRING_AUTH = True     # Gera URLs assinadas temporárias (contorna política de organização)
+    GS_EXPIRATION = 3600           # URLs assinadas válidas por 1 hora (segundos)
     GS_FILE_OVERWRITE = False      # Nunca sobrescreve arquivos com mesmo nome
     GS_MAX_MEMORY_SIZE = 5 * 1024 * 1024  # 5 MB — acima disso usa arquivo temp
 
@@ -89,6 +90,7 @@ if GS_BUCKET_NAME:
             "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
         },
     }
+    # MEDIA_URL não é usado com GS_QUERYSTRING_AUTH=True (URL vem do storage.url())
     MEDIA_URL = f"https://storage.googleapis.com/{GS_BUCKET_NAME}/"
 
 # ─── Logs de produção ────────────────────────────────────────────────────────
