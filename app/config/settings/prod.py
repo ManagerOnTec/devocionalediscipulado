@@ -8,8 +8,6 @@ Uso:
     DJANGO_SETTINGS_MODULE=config.settings.prod
 """
 
-from datetime import timedelta
-
 import sentry_sdk
 from decouple import config
 from sentry_sdk.integrations.django import DjangoIntegration
@@ -77,22 +75,22 @@ DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL", default="noreply@example.com")
 GS_BUCKET_NAME = config("GS_BUCKET_NAME", default="")
 
 if GS_BUCKET_NAME:
-    GS_PROJECT_ID = config("GS_PROJECT_ID", default="")
-    GS_DEFAULT_ACL = None                        # Sem ACL pública — acesso via URLs assinadas
-    GS_QUERYSTRING_AUTH = True                   # Gera URLs assinadas temporárias
-    GS_EXPIRATION = timedelta(minutes=30)        # Validade das URLs assinadas
-    GS_FILE_OVERWRITE = False                    # Nunca sobrescreve arquivos com mesmo nome
-    GS_MAX_MEMORY_SIZE = 5 * 1024 * 1024        # 5 MB — acima disso usa arquivo temp
+    GS_DEFAULT_ACL = None          # Sem ACL pública — acesso via URLs assinadas
+    GS_QUERYSTRING_AUTH = True     # Gera URLs assinadas temporárias (contorna política de organização)
+    GS_EXPIRATION = 3600           # URLs assinadas válidas por 1 hora (segundos)
+    GS_FILE_OVERWRITE = False      # Nunca sobrescreve arquivos com mesmo nome
+    GS_MAX_MEMORY_SIZE = 5 * 1024 * 1024  # 5 MB — acima disso usa arquivo temp
 
     STORAGES = {
         "default": {
-            "BACKEND": "config.storage_backends.PrivateMediaStorage",
+            "BACKEND": "storages.backends.gcloud.GoogleCloudStorage",
         },
         "staticfiles": {
             # Estáticos continuam sendo servidos pelo WhiteNoise
             "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
         },
     }
+    # MEDIA_URL não é usado com GS_QUERYSTRING_AUTH=True (URL vem do storage.url())
     MEDIA_URL = f"https://storage.googleapis.com/{GS_BUCKET_NAME}/"
 
 # ─── Logs de produção ────────────────────────────────────────────────────────
