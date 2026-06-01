@@ -27,7 +27,7 @@ crispy-bootstrap5>=2024.2
 
 # Upload e armazenamento de arquivos (GCS)
 django-storages[google]>=1.14
-google-cloud-storage>=2.16
+google-cloud-storage==3.9.0
 
 # Processamento de imagens
 Pillow>=10.3
