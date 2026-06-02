@@ -66,11 +66,21 @@ RUN groupadd --system appuser && useradd --system --gid appuser appuser
 # Copia o código fonte da aplicação
 COPY --chown=appuser:appuser . .
 
-# Coleta arquivos estáticos durante o build
-# Executamos como root para garantir a escrita, mas depois ajustamos o dono
+# Coleta arquivos estáticos durante o build.
+# Variáveis de e-mail com valores stub — collectstatic não usa SMTP,
+# mas prod.py precisa ser importado sem UndefinedValueError.
+# Executamos como root para garantir a escrita, depois ajustamos o dono.
 RUN SECRET_KEY=build-only-not-used \
+    EMAIL_HOST=stub \
+    EMAIL_PORT=587 \
+    EMAIL_USE_TLS=True \
+    EMAIL_USE_SSL=False \
+    EMAIL_HOST_USER=stub@stub.com \
+    EMAIL_HOST_PASSWORD=stub \
+    DEFAULT_FROM_EMAIL=stub@stub.com \
+    SERVER_EMAIL=stub@stub.com \
     python manage.py collectstatic --noinput && \
-    chown -R appuser:appuser /app/staticfiles  # <--- Adicione esta linha
+    chown -R appuser:appuser /app/staticfiles
 
 # Torna o entrypoint executável
 RUN chmod +x scripts/entrypoint.sh
