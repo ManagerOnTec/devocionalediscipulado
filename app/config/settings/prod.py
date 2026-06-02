@@ -82,7 +82,7 @@ GS_BUCKET_NAME = config("GS_BUCKET_NAME", default="")
 if GS_BUCKET_NAME:
     GS_PROJECT_ID = config("GS_PROJECT_ID", default="")
     GS_DEFAULT_ACL = None                      # Sem ACL pública — acesso via URLs assinadas
-    GS_QUERYSTRING_AUTH = True                 # Gera URLs assinadas temporárias
+    GS_QUERYSTRING_AUTH = False                 # Gera URLs assinadas temporárias
     GS_EXPIRATION = timedelta(minutes=120)     # Validade das URLs assinadas
     GS_FILE_OVERWRITE = False                  # Nunca sobrescreve arquivos com mesmo nome
     GS_MAX_MEMORY_SIZE = 5 * 1024 * 1024      # 5 MB — acima disso usa arquivo temp
