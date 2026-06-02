@@ -346,6 +346,20 @@ class ConcluirTemaView(LoginRequiredMixin, View):
         return HttpResponseNotAllowed(["POST"])
 
 
+class DesconcluirTemaView(LoginRequiredMixin, View):
+    def post(self, request, slug):
+        tema = get_object_or_404(Tema, slug=slug, is_active=True)
+        deleted, _ = ProgressoTema.objects.filter(usuario=request.user, tema=tema).delete()
+        if deleted:
+            messages.success(request, "Conclusão removida. Você pode rever este tema quando quiser.")
+        else:
+            messages.info(request, "Este tema não estava marcado como concluído.")
+        return redirect("estudo:detalhe_tema", slug=slug)
+
+    def get(self, request, slug):
+        return HttpResponseNotAllowed(["POST"])
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Progresso do usuário
 # ─────────────────────────────────────────────────────────────────────────────

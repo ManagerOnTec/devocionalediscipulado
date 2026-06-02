@@ -111,12 +111,19 @@
     {# ── Ações: concluir + navegação ── #}
     <div class="d-flex flex-column gap-3 mt-5">
 
-        {# ── Botão concluir ── #}
+        {# ── Botão concluir / desmarcar ── #}
         {% if user.is_authenticated and not ja_concluido %}
         <form method="post" action="{% url 'estudo:concluir_tema' slug=tema.slug %}">
             {% csrf_token %}
             <button type="submit" class="btn btn-success w-100">
                 <i class="bi bi-check-circle me-2" aria-hidden="true"></i>Marcar como Concluído
+            </button>
+        </form>
+        {% elif user.is_authenticated and ja_concluido %}
+        <form method="post" action="{% url 'estudo:desconcluir_tema' slug=tema.slug %}" id="form-desconcluir">
+            {% csrf_token %}
+            <button type="button" class="btn btn-outline-secondary w-100" onclick="confirmarDesconcluir()">
+                <i class="bi bi-x-circle me-2" aria-hidden="true"></i>Desmarcar conclusão
             </button>
         </form>
         {% elif not user.is_authenticated %}
@@ -151,4 +158,14 @@
     </div>
 
 </article>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function confirmarDesconcluir() {
+    if (confirm('Tem certeza que deseja desmarcar este tema como concluído?\nSeu progresso será removido.')) {
+        document.getElementById('form-desconcluir').submit();
+    }
+}
+</script>
 {% endblock %}

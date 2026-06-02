@@ -25,6 +25,9 @@ urlpatterns = [
     # Concluir tema [POST]
     path("tema/<slug:slug>/concluir/", views.ConcluirTemaView.as_view(), name="concluir_tema"),
 
+    # Desmarcar conclusão de tema [POST]
+    path("tema/<slug:slug>/desconcluir/", views.DesconcluirTemaView.as_view(), name="desconcluir_tema"),
+
     # ── Estudos Pessoais (superadmin only) ───────────────────────────────────
     path("estudos-pessoais/", views.EstudoPessoalListView.as_view(), name="estudopessoal_lista"),
     path("estudos-pessoais/<int:pk>/", views.EstudoPessoalDetalheView.as_view(), name="estudopessoal_detalhe"),
