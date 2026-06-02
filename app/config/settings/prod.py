@@ -64,14 +64,31 @@ SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
 
 # ─── E-mail via SMTP ─────────────────────────────────────────────────────────
+# Todas as variáveis são obrigatórias — sem defaults em código.
+# Gmail: ative verificação em 2 etapas e gere uma "Senha de app" (16 chars) em:
+#   Conta Google → Segurança → Senhas de app
+# Use a senha de app em EMAIL_HOST_PASSWORD — nunca a senha da conta.
+#
+# Variáveis obrigatórias no Cloud Run:
+#   EMAIL_HOST          → smtp.gmail.com
+#   EMAIL_PORT          → 587
+#   EMAIL_USE_TLS       → True
+#   EMAIL_USE_SSL       → False
+#   EMAIL_HOST_USER     → seuemail@gmail.com
+#   EMAIL_HOST_PASSWORD → senha-de-app-16-chars
+#   DEFAULT_FROM_EMAIL  → Nome <seuemail@gmail.com>
+#   SERVER_EMAIL        → seuemail@gmail.com
 
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-EMAIL_HOST = config("EMAIL_HOST", default="")
-EMAIL_PORT = config("EMAIL_PORT", default=587, cast=int)
-EMAIL_USE_TLS = True
-EMAIL_HOST_USER = config("EMAIL_HOST_USER", default="")
-EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD", default="")
-DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL", default="noreply@example.com")
+EMAIL_HOST = config("EMAIL_HOST")
+EMAIL_PORT = config("EMAIL_PORT", cast=int)
+# TLS (porta 587) e SSL (porta 465) são mutuamente exclusivos.
+EMAIL_USE_TLS = config("EMAIL_USE_TLS", cast=bool)
+EMAIL_USE_SSL = config("EMAIL_USE_SSL", cast=bool)
+EMAIL_HOST_USER = config("EMAIL_HOST_USER")
+EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD")
+DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL")
+SERVER_EMAIL = config("SERVER_EMAIL")
 
 # ─── GCS — armazenamento de arquivos de mídia (uploads) ─────────────────────
 # Estáticos são servidos pelo WhiteNoise (sem GCS).
