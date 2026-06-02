@@ -64,9 +64,9 @@
                 <div class="d-flex justify-content-between align-items-start mb-2 flex-wrap gap-2">
                     <div class="d-flex align-items-start gap-3">
                         {# ── Imagem do módulo ── #}
-                        {% if item.obj.imagem_capa %}
+                        {% if item.obj.imagem_capa_url %}
                         <img
-                            src="{{ item.obj.imagem_capa.url }}"
+                            src="{{ item.obj.imagem_capa_url }}"
                             alt=""
                             class="rounded flex-shrink-0 object-fit-cover"
                             style="width: 56px; height: 56px;"

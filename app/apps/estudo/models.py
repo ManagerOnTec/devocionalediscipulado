@@ -8,36 +8,12 @@ Hierarquia:
     ProgressoTema(TimeStampedModel)        ← conclusão de um Tema por usuário
 """
 
-import os
-
 from django.conf import settings
-from django.core.exceptions import ValidationError
 from django.db import models
+from django.templatetags.static import static
 from django.utils.text import slugify
 
 from apps.core.models import BaseModel, TimeStampedModel
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Validador de imagem de capa
-# ─────────────────────────────────────────────────────────────────────────────
-
-def validar_formato_imagem(arquivo):
-    """
-    Aceita somente JPEG (.jpg / .jpeg) e PNG (.png).
-    A mensagem de erro é exibida diretamente no formulário do admin.
-    """
-    ext = os.path.splitext(arquivo.name)[1].lower()
-    if ext not in (".jpg", ".jpeg", ".png"):
-        raise ValidationError(
-            "Formato inválido. Envie apenas arquivos JPEG (.jpg, .jpeg) ou PNG (.png)."
-        )
-    if hasattr(arquivo, "content_type"):
-        tipos_aceitos = ("image/jpeg", "image/png")
-        if arquivo.content_type not in tipos_aceitos:
-            raise ValidationError(
-                "Formato inválido. Envie apenas arquivos JPEG (.jpg, .jpeg) ou PNG (.png)."
-            )
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -166,17 +142,29 @@ class Modulo(BaseModel):
         blank=True,
         verbose_name="Descrição",
     )
-    # Imagem fica apenas no Módulo — não nos temas individuais
-    # Convenção: 800×450 px (16:9) — redimensionada automaticamente ao salvar.
-    imagem_capa = models.ImageField(
-        upload_to="estudo/modulos/",
-        null=True,
+
+    class ImagemCapaChoices(models.TextChoices):
+        DEVOCIONAL     = "devocional.jpg",    "Devocional"
+        DISCIPULADO    = "discipulado.jpg",   "Discipulado"
+        ESTUDO_PESSOAL = "estudopessoal.jpg", "Estudo Pessoal"
+
+    # Escolha de imagem pré-definida em static/images/ — sem upload, sem media.
+    imagem_capa = models.CharField(
+        max_length=50,
         blank=True,
+        default="",
+        choices=ImagemCapaChoices.choices,
         verbose_name="Imagem de Capa",
-        validators=[validar_formato_imagem],
-        help_text="Formatos aceitos: JPEG (.jpg, .jpeg) e PNG (.png). "
-                  "A imagem será redimensionada para 800×450 px (16:9) automaticamente.",
+        help_text="Escolha a imagem que representa o tipo de conteúdo deste módulo.",
     )
+
+    @property
+    def imagem_capa_url(self) -> str:
+        """Retorna a URL estática da imagem selecionada, ou string vazia."""
+        if not self.imagem_capa:
+            return ""
+        return static(f"images/{self.imagem_capa}")
+
     ordem = models.PositiveIntegerField(
         default=0,
         db_index=True,
@@ -212,69 +200,7 @@ class Modulo(BaseModel):
                 slug = f"{base}-{n}"
                 n += 1
             self.slug = slug
-
-        # Rastreia se a imagem foi alterada
-        _imagem_anterior = None
-        if self.pk:
-            try:
-                anterior = Modulo.objects.get(pk=self.pk)
-                _imagem_anterior = anterior.imagem_capa.name if anterior.imagem_capa else None
-            except Modulo.DoesNotExist:
-                pass
-
         super().save(*args, **kwargs)
-
-        imagem_atual = self.imagem_capa.name if self.imagem_capa else None
-        if imagem_atual and imagem_atual != _imagem_anterior:
-            self._redimensionar_capa()
-
-    def _redimensionar_capa(self):
-        """
-        Redimensiona a imagem de capa para 800×450 px (proporção 16:9),
-        cortando o excesso centralmente. Compatível com GCS (GS_FILE_OVERWRITE=False).
-        """
-        from PIL import Image, ImageOps
-        from django.core.files.base import ContentFile
-        import io
-        import os
-
-        # 1. Carrega a imagem original em memória enquanto o handle está aberto
-        with self.imagem_capa.open('rb') as f:
-            img = Image.open(f)
-            img.load()  # força leitura completa antes de fechar o handle
-
-        ext = os.path.splitext(self.imagem_capa.name)[1].lower()
-        fmt = "PNG" if ext == ".png" else "JPEG"
-
-        if fmt == "JPEG" and img.mode != "RGB":
-            img = img.convert("RGB")
-
-        # 2. Redimensiona com corte central (16:9)
-        img_final = ImageOps.fit(img, (800, 450), Image.LANCZOS)
-
-        # 3. Serializa em memória
-        buffer = io.BytesIO()
-        save_kwargs = {"optimize": True}
-        if fmt == "JPEG":
-            save_kwargs["quality"] = 85
-        img_final.save(buffer, format=fmt, **save_kwargs)
-
-        # 4. Substitui o arquivo no GCS
-        #    FieldFile.save() não é usado porque ele aplica upload_to via
-        #    generate_filename(), dobrando o prefixo do caminho.
-        #    Com GS_FILE_OVERWRITE=False, exclui antes para que o storage
-        #    reutilize o mesmo nome sem adicionar sufixo único.
-        nome_arquivo = self.imagem_capa.name
-        self.imagem_capa.storage.delete(nome_arquivo)
-        novo_nome = self.imagem_capa.storage.save(
-            nome_arquivo,
-            ContentFile(buffer.getvalue()),
-        )
-        # Atualiza somente se o storage gerou um nome diferente (cenário raro)
-        if novo_nome != nome_arquivo:
-            self.imagem_capa.name = novo_nome
-            Modulo.objects.filter(pk=self.pk).update(imagem_capa=novo_nome)
-
 
     def esta_desbloqueado(self, usuario) -> bool:
         """O primeiro módulo da trilha é sempre desbloqueado.

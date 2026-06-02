@@ -62,9 +62,9 @@
 
                 {# ── Imagem de capa do primeiro módulo ── #}
                 {% with first_modulo=trilha.modulos.first %}
-                {% if first_modulo and first_modulo.imagem_capa %}
+                {% if first_modulo and first_modulo.imagem_capa_url %}
                 <img
-                    src="{{ first_modulo.imagem_capa.url }}"
+                    src="{{ first_modulo.imagem_capa_url }}"
                     alt="Capa da trilha: {{ trilha.titulo }}"
                     class="card-img-top object-fit-cover"
                     style="height: 180px;"

@@ -353,10 +353,11 @@ class ModuloAdmin(BaseModelAdmin):
 
     @admin.display(description="Imagem")
     def imagem_preview(self, obj):
-        if obj.imagem_capa:
+        url = obj.imagem_capa_url
+        if url:
             return format_html(
                 '<img src="{}" style="height:40px;border-radius:4px;" alt="capa">',
-                obj.imagem_capa.url,
+                url,
             )
         return "—"
 
