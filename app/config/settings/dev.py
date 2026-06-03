@@ -34,6 +34,20 @@ MIDDLEWARE.insert(  # noqa: F405
 # IPs que podem ver o Debug Toolbar
 INTERNAL_IPS = ["127.0.0.1", "::1"]
 
+# ─── Arquivos estáticos ───────────────────────────────────────────────────────
+
+# Em dev, usa StaticFilesStorage simples — sem manifesto, sem collectstatic.
+# base.py usa CompressedManifestStaticFilesStorage (manifesto obrigatório), que
+# causaria ValueError ao chamar static() em Python quando staticfiles/ não existe.
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+    },
+}
+
 # ─── E-mail ───────────────────────────────────────────────────────────────────
 
 # Imprime e-mails no console em vez de enviá-los

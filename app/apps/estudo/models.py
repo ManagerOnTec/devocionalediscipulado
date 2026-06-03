@@ -152,6 +152,7 @@ class Modulo(BaseModel):
     imagem_capa = models.CharField(
         max_length=50,
         blank=True,
+        null=True,
         default="",
         choices=ImagemCapaChoices.choices,
         verbose_name="Imagem de Capa",

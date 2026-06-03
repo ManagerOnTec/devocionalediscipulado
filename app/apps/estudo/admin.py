@@ -316,7 +316,7 @@ class TrilhaAdmin(BaseModelAdmin):
 
 @admin.register(Modulo)
 class ModuloAdmin(BaseModelAdmin):
-    list_display = ("titulo", "trilha", "acesso", "ordem", "imagem_preview", "status_badge", "criado_em")
+    list_display = ("titulo", "trilha", "acesso", "ordem", "status_badge", "criado_em")
     list_display_links = ("titulo",)
     list_filter = ("trilha", "acesso", "is_active")
     search_fields = ("titulo", "descricao", "trilha__titulo")
