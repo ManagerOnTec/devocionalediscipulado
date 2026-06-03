@@ -307,14 +307,14 @@ class Tema(BaseModel):
         verbose_name="Referências Cruzadas",
     )
 
-    # ── Estudo aprofundado ────────────────────────────────────────────────────
+    # ── Estudo   ────────────────────────────────────────────────────
     tem_estudo = models.BooleanField(
         default=False,
-        verbose_name="Tem Estudo Aprofundado?",
+        verbose_name="Tem Estudo  ?",
     )
     estudo = models.TextField(
         blank=True,
-        verbose_name="Estudo Aprofundado",
+        verbose_name="Estudo  ",
     )
 
     # ── Exemplo prático ───────────────────────────────────────────────────────
@@ -403,7 +403,7 @@ class ProgressoTema(TimeStampedModel):
 
 class EstudoPessoal(models.Model):
     """
-    Ferramenta de estudo bíblico aprofundado — uso exclusivo do superadmin.
+    Ferramenta de estudo bíblico   — uso exclusivo do superadmin.
     Estrutura metodológica completa: texto, contexto, hermenêutica,
     teologia e desenvolvimento homilético.
     """
