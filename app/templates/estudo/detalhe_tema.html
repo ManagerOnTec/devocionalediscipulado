@@ -52,11 +52,11 @@
         <div class="lh-lg">{{ tema.texto_base|linebreaks }}</div>
     </section>
 
-    {# ── Estudo Aprofundado (ativável) ── #}
+    {# ── Estudo (ativável) ── #}
     {% if tema.tem_estudo and tema.estudo %}
     <section aria-labelledby="estudo-heading" class="mb-4">
         <h2 id="estudo-heading" class="h5 fw-semibold border-bottom pb-2 mb-3">
-            <i class="bi bi-journal-text me-2 text-primary" aria-hidden="true"></i>Estudo Aprofundado
+            <i class="bi bi-journal-text me-2 text-primary" aria-hidden="true"></i>Estudo
         </h2>
         <div class="lh-lg">{{ tema.estudo|linebreaks }}</div>
     </section>
