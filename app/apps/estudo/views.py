@@ -330,17 +330,10 @@ class ConcluirTemaView(LoginRequiredMixin, View):
             usuario=request.user, tema=tema
         )
         if created:
-            messages.success(request, "Parabéns! Tema concluído.")
+            messages.success(request, "Parabéns! Tema concluído com sucesso.")
         else:
             messages.info(request, "Você já havia concluído este tema.")
-        proximo = (
-            Tema.objects.filter(modulo=tema.modulo, ordem__gt=tema.ordem)
-            .order_by("ordem")
-            .first()
-        )
-        if proximo:
-            return redirect("estudo:detalhe_tema", slug=proximo.slug)
-        return redirect("estudo:detalhe_modulo", slug=tema.modulo.slug)
+        return redirect("estudo:detalhe_tema", slug=slug)
 
     def get(self, request, slug):
         return HttpResponseNotAllowed(["POST"])
