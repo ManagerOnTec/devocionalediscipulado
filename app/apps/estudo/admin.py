@@ -713,20 +713,41 @@ def _linhas_estudo(obj) -> list:
     """
     Retorna lista de (titulo_secao, conteudo) para exportação,
     respeitando os booleans de inclusão.
+    Organizado nos 3 topicazões: Hermenêutica, Exegese, Homilética.
     """
     secoes = []
 
     def add(titulo, conteudo):
-        """Só adiciona a seção se o conteúdo for não-vazio."""
         conteudo = (conteudo or "").strip()
         if conteudo:
             secoes.append((titulo, conteudo))
 
     add("REFERÊNCIA BÍBLICA", obj.referencia)
     add("TEXTO BÍBLICO", obj.texto_biblico)
+
+    # ── HERMENÊUTICA ─────────────────────────────────────────────────────────
+    secoes.append(("═══ HERMENÊUTICA ═══", ""))
     add("CONTEXTO ANTERIOR", obj.contexto_anterior)
     add("CONTEXTO POSTERIOR", obj.contexto_posterior)
     add("VERSÍCULOS RELACIONADOS", obj.versiculos_relacionados)
+    add("USO NO ANTIGO TESTAMENTO", obj.uso_antigo_testamento)
+    add("USO NO NOVO TESTAMENTO", obj.uso_novo_testamento)
+    add("USO HISTÓRICO GREGO", obj.uso_historico_grego)
+    add("USO NA FILOSOFIA ANTIGA", obj.uso_historico_filosofia_antiga)
+    add("FILOSOFIA MODERNA", obj.filosofia_moderna)
+    add("GÊNERO LITERÁRIO", obj.genero_literario)
+    add("QUEM ESTÁ FALANDO?", obj.quem_fala)
+    add("PARA QUEM?", obj.para_quem)
+    add("INTENÇÃO DO AUTOR", obj.intencao_autor)
+    add("CULTURA", obj.cultura)
+    add("GRAMÁTICA", obj.gramatica)
+    add("ONDE ESTÁ CRISTO", obj.onde_esta_cristo)
+    add("SOBRE O QUÊ?", obj.sobre_o_que)
+    add("QUAL O OBJETIVO?", obj.qual_objetivo)
+    add("O QUE EXIGE DE MIM?", obj.o_que_exige_de_mim)
+
+    # ── EXEGESE ───────────────────────────────────────────────────────────────
+    secoes.append(("═══ EXEGESE ═══", ""))
     add("PALAVRA CENTRAL", obj.palavra_central)
     add("PALAVRA QUE SE REPETE", obj.palavra_repetida)
     add("PALAVRA A APROFUNDAR", obj.palavra_aprofundar)
@@ -735,35 +756,25 @@ def _linhas_estudo(obj) -> list:
     add("TRADUÇÃO / GREGO", obj.traducao_grego)
     add("TRADUÇÃO / LATIM", obj.traducao_latim)
     add("TRADUÇÃO / INGLÊS", obj.traducao_ingles)
+    add("TRADUÇÃO / ORIGINAL", obj.traducao_original)
     add("OBSERVAÇÕES PARA O PORTUGUÊS", obj.observacoes_portugues)
-    add("ONDE ESTÁ CRISTO", obj.onde_esta_cristo)
-    add("USO NO ANTIGO TESTAMENTO", obj.uso_antigo_testamento)
-    add("USO NO NOVO TESTAMENTO", obj.uso_novo_testamento)
-    add("USO HISTÓRICO GREGO", obj.uso_historico_grego)
-    add("USO NA FILOSOFIA ANTIGA", obj.uso_historico_filosofia_antiga)
-    add("FILOSOFIA MODERNA", obj.filosofia_moderna)
-    add("GÊNERO LITERÁRIO", obj.genero_literario)
-    add("CULTURA", obj.cultura)
-    add("INTENÇÃO DO AUTOR", obj.intencao_autor)
-    add("QUEM ESTÁ FALANDO?", obj.quem_fala)
-    add("PARA QUEM?", obj.para_quem)
-    add("SOBRE O QUÊ?", obj.sobre_o_que)
-    add("QUAL O OBJETIVO?", obj.qual_objetivo)
-    add("O QUE EXIGE DE MIM?", obj.o_que_exige_de_mim)
+
+    # ── HOMILÉTICA ────────────────────────────────────────────────────────────
+    secoes.append(("═══ HOMILÉTICA ═══", ""))
 
     if obj.incluir_introducao:
         add("INTRODUÇÃO", obj.introducao)
 
     topicos = obj.topicos.filter(incluir=True).order_by("ordem")
     if topicos.exists():
-        secoes.append(("APLICAÇÕES / TÓPICOS", ""))
+        secoes.append(("TÓPICOS DO SERMÃO", ""))
         for t in topicos:
             secoes.append((f"  Tópico {t.ordem}: {t.titulo}", (t.conteudo or "").strip()))
 
     if obj.incluir_explicacao:
-        add("EXPLICAÇÃO", obj.explicacao)
+        add("EXPLICAÇÃO DO TEXTO", obj.explicacao)
     if obj.incluir_aplicacao:
-        add("APLICAÇÃO", obj.aplicacao)
+        add("APLICAÇÃO PRÁTICA PARA OS DIAS ATUAIS", obj.aplicacao)
     if obj.incluir_conclusao:
         add("CONCLUSÃO", obj.conclusao)
     if obj.incluir_oracao:
@@ -848,7 +859,8 @@ def _exportar_docx(obj):
     doc.add_paragraph("")
 
     for titulo, conteudo in _linhas_estudo(obj):
-        doc.add_heading(titulo, level=2)
+        nivel = 1 if titulo.startswith("═══") else 2
+        doc.add_heading(titulo.replace("═══ ", "").replace(" ═══", ""), level=nivel)
         if conteudo:
             for linha in conteudo.split("\n"):
                 linha = linha.strip()
@@ -865,6 +877,50 @@ def _exportar_docx(obj):
         content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     )
     nome = f"estudo_{obj.pk}_{obj.referencia[:30].replace(' ', '_')}.docx"
+    response["Content-Disposition"] = f'attachment; filename="{nome}"'
+    return response
+
+
+def _exportar_markdown(obj):
+    """Gera HttpResponse com arquivo Markdown (.md)."""
+    from django.http import HttpResponse
+
+    titulo = obj.titulo or "(sem título)"
+    referencia = obj.referencia or "(sem referência)"
+
+    linhas = [
+        f"# {titulo}",
+        "",
+        f"> **Referência:** {referencia}",
+        "",
+        f"*Criado em: {obj.criado_em.strftime('%d/%m/%Y %H:%M')}*",
+        "",
+        "---",
+        "",
+    ]
+
+    for titulo_secao, conteudo in _linhas_estudo(obj):
+        if titulo_secao.startswith("═══"):
+            # Topicazão principal → h2
+            nome_grupo = titulo_secao.replace("═══ ", "").replace(" ═══", "")
+            linhas.append(f"## {nome_grupo}")
+            linhas.append("")
+        elif titulo_secao.startswith("  Tópico"):
+            # Sub-item de tópico
+            linhas.append(f"#### {titulo_secao.strip()}")
+            linhas.append("")
+            if conteudo:
+                linhas.append(conteudo)
+                linhas.append("")
+        else:
+            linhas.append(f"### {titulo_secao}")
+            linhas.append("")
+            if conteudo:
+                linhas.append(conteudo)
+                linhas.append("")
+
+    response = HttpResponse("\n".join(linhas), content_type="text/markdown; charset=utf-8")
+    nome = f"estudo_{obj.pk}_{referencia[:30].replace(' ', '_')}.md"
     response["Content-Disposition"] = f'attachment; filename="{nome}"'
     return response
 
@@ -892,6 +948,13 @@ def acao_exportar_docx(modeladmin, request, queryset):
     modeladmin.message_user(request, "Selecione apenas 1 estudo por vez para exportar.", messages.WARNING)
 
 
+@admin.action(description="📋 Exportar como Markdown")
+def acao_exportar_markdown(modeladmin, request, queryset):
+    if queryset.count() == 1:
+        return _exportar_markdown(queryset.first())
+    modeladmin.message_user(request, "Selecione apenas 1 estudo por vez para exportar.", messages.WARNING)
+
+
 # ── Inline de tópicos ─────────────────────────────────────────────────────────
 
 class TopicoEstudoInline(admin.TabularInline):
@@ -913,71 +976,124 @@ class EstudoPessoalAdmin(UnfoldModelAdmin):
     ordering = ("-criado_em",)
     readonly_fields = ("criado_em", "atualizado_em")
     inlines = [TopicoEstudoInline]
-    actions = [acao_exportar_txt, acao_exportar_pdf, acao_exportar_docx]
+    actions = [acao_exportar_txt, acao_exportar_pdf, acao_exportar_docx, acao_exportar_markdown]
 
     compressed_fields = True
     warn_unsaved_changes = True
 
     fieldsets = [
         ("Identificação", {
-            "fields": ("titulo", "referencia", "criado_em", "atualizado_em"),
+            "fields": ("titulo", "referencia", "texto_biblico", "criado_em", "atualizado_em"),
         }),
-        ("Texto e Contexto Bíblico", {
-            "fields": ("texto_biblico", "contexto_anterior", "contexto_posterior", "versiculos_relacionados"),
-            "classes": ("collapse",),
-        }),
-        ("Palavras-chave e Léxico", {
+
+        # ── HERMENÊUTICA ─────────────────────────────────────────────────────
+        ("🔍 Hermenêutica — Contexto Histórico", {
             "fields": (
-                "palavra_central", "palavra_repetida", "palavra_aprofundar", "sinonimos",
-                "traducao_hebraico", "traducao_grego", "traducao_latim", "traducao_ingles",
-                "observacoes_portugues",
-            ),
-            "classes": ("collapse",),
-        }),
-        ("Teologia e Contexto Histórico", {
-            "fields": (
-                "onde_esta_cristo",
+                "contexto_anterior", "contexto_posterior", "versiculos_relacionados",
                 "uso_antigo_testamento", "uso_novo_testamento",
-                "uso_historico_grego", "uso_historico_filosofia_antiga",
-                "filosofia_moderna", "genero_literario", "cultura", "intencao_autor",
+                "uso_historico_grego", "uso_historico_filosofia_antiga", "filosofia_moderna",
+            ),
+            "description": (
+                "Situa o texto no tempo: o que acontece antes e depois, como o AT/NT se "
+                "relacionam, e como a história e a filosofia contextualizam o trecho."
             ),
             "classes": ("collapse",),
         }),
-        ("Perguntas Hermenêuticas", {
-            "fields": ("quem_fala", "para_quem", "sobre_o_que", "qual_objetivo", "o_que_exige_de_mim"),
+        ("🔍 Hermenêutica — Gênero Literário", {
+            "fields": ("genero_literario",),
+            "description": "Narrativa, poesia, lei, profecia, epístola, apocalipse? O gênero define as regras de interpretação.",
             "classes": ("collapse",),
         }),
-        ("Desenvolvimento — 1. Introdução", {
+        ("🔍 Hermenêutica — Autor e Público Original", {
+            "fields": ("quem_fala", "para_quem", "intencao_autor"),
+            "description": "Identifica quem fala, a quem fala e o que pretendia comunicar ao auditório original.",
+            "classes": ("collapse",),
+        }),
+        ("🔍 Hermenêutica — Cultura", {
+            "fields": ("cultura",),
+            "description": "Costumes, contexto socioeconômico, político e religioso do mundo do autor/destinatário.",
+            "classes": ("collapse",),
+        }),
+        ("🔍 Hermenêutica — Gramática", {
+            "fields": ("gramatica",),
+            "description": "Análise gramatical: estrutura das frases, verbos, tempos, modos e formas relevantes do texto.",
+            "classes": ("collapse",),
+        }),
+        ("🔍 Hermenêutica — Contexto Geral das Escrituras", {
+            "fields": ("onde_esta_cristo", "sobre_o_que", "qual_objetivo", "o_que_exige_de_mim"),
+            "description": "Como o texto se encaixa no grande arco das Escrituras: leitura cristológica, tema central e demanda ao leitor.",
+            "classes": ("collapse",),
+        }),
+
+        # ── EXEGESE ───────────────────────────────────────────────────────────
+        ("📖 Exegese — Análise das Palavras", {
+            "fields": ("palavra_central", "palavra_repetida", "palavra_aprofundar", "sinonimos"),
+            "description": "Identifica as palavras-chave do texto e os termos que merecem pesquisa lexical aprofundada.",
+            "classes": ("collapse",),
+        }),
+        ("📖 Exegese — Hebraico", {
+            "fields": ("traducao_hebraico",),
+            "description": "Sentido do termo no hebraico original (AT). Use Strong's ou léxico BDB.",
+            "classes": ("collapse",),
+        }),
+        ("📖 Exegese — Grego", {
+            "fields": ("traducao_grego",),
+            "description": "Sentido do termo no grego original (NT). Use Strong's, BDAG ou Thayer.",
+            "classes": ("collapse",),
+        }),
+        ("📖 Exegese — Latim", {
+            "fields": ("traducao_latim",),
+            "description": "Como a Vulgata Latina traduz o termo — rastreamento da influência teológica medieval.",
+            "classes": ("collapse",),
+        }),
+        ("📖 Exegese — Inglês", {
+            "fields": ("traducao_ingles",),
+            "description": "Como versões em inglês (KJV, ESV, NASB) rendem o termo — amplia o espectro semântico.",
+            "classes": ("collapse",),
+        }),
+        ("📖 Exegese — Original", {
+            "fields": ("traducao_original",),
+            "description": "Análise do texto no idioma original: transliteração, forma verbal, raiz e notas lexicais.",
+            "classes": ("collapse",),
+        }),
+        ("📖 Exegese — Observações para o Português", {
+            "fields": ("observacoes_portugues",),
+            "description": "Nuances da tradução para o português: diferenças entre ARC, ARA, NVI, NVT, etc.",
+            "classes": ("collapse",),
+        }),
+
+        # ── HOMILÉTICA ────────────────────────────────────────────────────────
+        ("🎤 Homilética — Introdução", {
             "fields": ("incluir_introducao", "introducao"),
-            "description": "Abertura do estudo: gancho, problema, relevância.",
+            "description": "Abertura do sermão: gancho, problema, relevância para a congregação.",
             "classes": ("collapse",),
         }),
-        ("Desenvolvimento — 2. Aplicações / Tópicos", {
+        ("🎤 Homilética — Tópicos do Sermão", {
             "fields": (),
             "description": (
                 "⬇️  Os tópicos ficam na seção 'Tópicos' abaixo deste formulário — "
-                "na exportação (TXT / PDF / DOCX) e no template eles são inseridos "
-                "automaticamente nesta posição, entre a Introdução e a Explicação."
+                "na exportação (TXT / PDF / DOCX / MD) eles são inseridos automaticamente "
+                "nesta posição, entre a Introdução e a Explicação."
             ),
         }),
-        ("Desenvolvimento — 3. Explicação", {
+        ("🎤 Homilética — Explicação do Texto", {
             "fields": ("incluir_explicacao", "explicacao"),
-            "description": "Exegese e exposição versículo a versículo.",
+            "description": "Exposição versículo a versículo: o que o texto diz e o que significa.",
             "classes": ("collapse",),
         }),
-        ("Desenvolvimento — 4. Aplicação", {
+        ("🎤 Homilética — Aplicação Prática para os Dias Atuais", {
             "fields": ("incluir_aplicacao", "aplicacao"),
-            "description": "Como este texto deve transformar a vida do ouvinte?",
+            "description": "Como este texto deve transformar a vida do ouvinte hoje? Exemplos concretos e contemporâneos.",
             "classes": ("collapse",),
         }),
-        ("Desenvolvimento — 5. Conclusão", {
+        ("🎤 Homilética — Conclusão", {
             "fields": ("incluir_conclusao", "conclusao"),
-            "description": "Síntese, chamada à ação ou convite.",
+            "description": "Fechamento do sermão: síntese, chamada à decisão ou convite.",
             "classes": ("collapse",),
         }),
-        ("Desenvolvimento — 6. Oração", {
+        ("🎤 Homilética — Oração", {
             "fields": ("incluir_oracao", "oracao"),
-            "description": "Sugestão de oração para encerrar.",
+            "description": "Sugestão de oração para encerrar o sermão ou culto.",
             "classes": ("collapse",),
         }),
     ]
@@ -1020,6 +1136,11 @@ class EstudoPessoalAdmin(UnfoldModelAdmin):
                 self.admin_site.admin_view(self._view_exportar_docx),
                 name="estudo_estudopessoal_exportar_docx",
             ),
+            dj_path(
+                "<int:pk>/exportar/md/",
+                self.admin_site.admin_view(self._view_exportar_markdown),
+                name="estudo_estudopessoal_exportar_md",
+            ),
         ]
         return custom + urls
 
@@ -1038,11 +1159,15 @@ class EstudoPessoalAdmin(UnfoldModelAdmin):
     def _view_exportar_docx(self, request, pk):
         return _exportar_docx(self._get_obj_or_403(request, pk))
 
+    def _view_exportar_markdown(self, request, pk):
+        return _exportar_markdown(self._get_obj_or_403(request, pk))
+
     def change_view(self, request, object_id, form_url="", extra_context=None):
         extra_context = extra_context or {}
         extra_context["exportar_urls"] = {
             "txt":  "../exportar/txt/",
             "pdf":  "../exportar/pdf/",
             "docx": "../exportar/docx/",
+            "md":   "../exportar/md/",
         }
         return super().change_view(request, object_id, form_url, extra_context)

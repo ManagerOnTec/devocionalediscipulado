@@ -492,6 +492,11 @@ class EstudoPessoal(models.Model):
         verbose_name="Tradução / Inglês",
         help_text="Como versões em inglês (KJV, ESV, NASB) rendem o termo — amplia o espectro semântico.",
     )
+    traducao_original = models.TextField(
+        blank=True, null=True,
+        verbose_name="Tradução / Original",
+        help_text="Análise do texto no idioma original (hebraico ou grego): transliteração, forma verbal, raiz e notas lexicais.",
+    )
     observacoes_portugues = models.TextField(
         blank=True, null=True,
         verbose_name="Observações para o Português",
@@ -538,6 +543,11 @@ class EstudoPessoal(models.Model):
         blank=True, null=True,
         verbose_name="Cultura",
         help_text="Costumes, contexto socioeconômico, político e religioso do mundo do autor/destinatário.",
+    )
+    gramatica = models.TextField(
+        blank=True, null=True,
+        verbose_name="Gramática",
+        help_text="Análise gramatical do texto: estrutura das frases, verbos, tempos, modos e formas gramaticais relevantes.",
     )
     intencao_autor = models.TextField(
         blank=True, null=True,

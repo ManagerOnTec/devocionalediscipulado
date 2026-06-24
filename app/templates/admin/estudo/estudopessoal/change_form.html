@@ -1,0 +1,28 @@
+{% extends "admin/change_form.html" %}
+{% load i18n %}
+
+{% block object-tools-items %}
+  {% if exportar_urls %}
+    <li>
+      <a href="{{ exportar_urls.txt }}" class="historylink" title="Exportar TXT">
+        📄 TXT
+      </a>
+    </li>
+    <li>
+      <a href="{{ exportar_urls.pdf }}" class="historylink" title="Exportar PDF">
+        📕 PDF
+      </a>
+    </li>
+    <li>
+      <a href="{{ exportar_urls.docx }}" class="historylink" title="Exportar DOCX">
+        📝 DOCX
+      </a>
+    </li>
+    <li>
+      <a href="{{ exportar_urls.md }}" class="historylink" title="Exportar Markdown">
+        📋 Markdown
+      </a>
+    </li>
+  {% endif %}
+  {{ block.super }}
+{% endblock %}
