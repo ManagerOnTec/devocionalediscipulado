@@ -726,38 +726,40 @@ def _linhas_estudo(obj) -> list:
     add("TEXTO BÍBLICO", obj.texto_biblico)
 
     # ── HERMENÊUTICA ─────────────────────────────────────────────────────────
-    secoes.append(("═══ HERMENÊUTICA ═══", ""))
-    add("CONTEXTO ANTERIOR", obj.contexto_anterior)
-    add("CONTEXTO POSTERIOR", obj.contexto_posterior)
-    add("VERSÍCULOS RELACIONADOS", obj.versiculos_relacionados)
-    add("USO NO ANTIGO TESTAMENTO", obj.uso_antigo_testamento)
-    add("USO NO NOVO TESTAMENTO", obj.uso_novo_testamento)
-    add("USO HISTÓRICO GREGO", obj.uso_historico_grego)
-    add("USO NA FILOSOFIA ANTIGA", obj.uso_historico_filosofia_antiga)
-    add("FILOSOFIA MODERNA", obj.filosofia_moderna)
-    add("GÊNERO LITERÁRIO", obj.genero_literario)
-    add("QUEM ESTÁ FALANDO?", obj.quem_fala)
-    add("PARA QUEM?", obj.para_quem)
-    add("INTENÇÃO DO AUTOR", obj.intencao_autor)
-    add("CULTURA", obj.cultura)
-    add("GRAMÁTICA", obj.gramatica)
-    add("ONDE ESTÁ CRISTO", obj.onde_esta_cristo)
-    add("SOBRE O QUÊ?", obj.sobre_o_que)
-    add("QUAL O OBJETIVO?", obj.qual_objetivo)
-    add("O QUE EXIGE DE MIM?", obj.o_que_exige_de_mim)
+    if obj.incluir_hermeneutica:
+        secoes.append(("═══ HERMENÊUTICA ═══", ""))
+        add("CONTEXTO ANTERIOR", obj.contexto_anterior)
+        add("CONTEXTO POSTERIOR", obj.contexto_posterior)
+        add("VERSÍCULOS RELACIONADOS", obj.versiculos_relacionados)
+        add("USO NO ANTIGO TESTAMENTO", obj.uso_antigo_testamento)
+        add("USO NO NOVO TESTAMENTO", obj.uso_novo_testamento)
+        add("USO HISTÓRICO GREGO", obj.uso_historico_grego)
+        add("USO NA FILOSOFIA ANTIGA", obj.uso_historico_filosofia_antiga)
+        add("FILOSOFIA MODERNA", obj.filosofia_moderna)
+        add("GÊNERO LITERÁRIO", obj.genero_literario)
+        add("QUEM ESTÁ FALANDO?", obj.quem_fala)
+        add("PARA QUEM?", obj.para_quem)
+        add("INTENÇÃO DO AUTOR", obj.intencao_autor)
+        add("CULTURA", obj.cultura)
+        add("GRAMÁTICA", obj.gramatica)
+        add("ONDE ESTÁ CRISTO", obj.onde_esta_cristo)
+        add("SOBRE O QUÊ?", obj.sobre_o_que)
+        add("QUAL O OBJETIVO?", obj.qual_objetivo)
+        add("O QUE EXIGE DE MIM?", obj.o_que_exige_de_mim)
 
     # ── EXEGESE ───────────────────────────────────────────────────────────────
-    secoes.append(("═══ EXEGESE ═══", ""))
-    add("PALAVRA CENTRAL", obj.palavra_central)
-    add("PALAVRA QUE SE REPETE", obj.palavra_repetida)
-    add("PALAVRA A APROFUNDAR", obj.palavra_aprofundar)
-    add("SINÔNIMOS", obj.sinonimos)
-    add("TRADUÇÃO / HEBRAICO", obj.traducao_hebraico)
-    add("TRADUÇÃO / GREGO", obj.traducao_grego)
-    add("TRADUÇÃO / LATIM", obj.traducao_latim)
-    add("TRADUÇÃO / INGLÊS", obj.traducao_ingles)
-    add("TRADUÇÃO / ORIGINAL", obj.traducao_original)
-    add("OBSERVAÇÕES PARA O PORTUGUÊS", obj.observacoes_portugues)
+    if obj.incluir_exegese:
+        secoes.append(("═══ EXEGESE ═══", ""))
+        add("PALAVRA CENTRAL", obj.palavra_central)
+        add("PALAVRA QUE SE REPETE", obj.palavra_repetida)
+        add("PALAVRA A APROFUNDAR", obj.palavra_aprofundar)
+        add("SINÔNIMOS", obj.sinonimos)
+        add("TRADUÇÃO / HEBRAICO", obj.traducao_hebraico)
+        add("TRADUÇÃO / GREGO", obj.traducao_grego)
+        add("TRADUÇÃO / LATIM", obj.traducao_latim)
+        add("TRADUÇÃO / INGLÊS", obj.traducao_ingles)
+        add("TRADUÇÃO / ORIGINAL", obj.traducao_original)
+        add("OBSERVAÇÕES PARA O PORTUGUÊS", obj.observacoes_portugues)
 
     # ── HOMILÉTICA ────────────────────────────────────────────────────────────
     secoes.append(("═══ HOMILÉTICA ═══", ""))
@@ -970,13 +972,45 @@ class TopicoEstudoInline(admin.TabularInline):
 class EstudoPessoalAdmin(UnfoldModelAdmin):
     """Visível e editável somente por superadmin."""
 
-    list_display = ("titulo", "referencia", "criado_em", "atualizado_em")
+    list_display = (
+        "titulo", "referencia",
+        "badge_hermeneutica", "badge_exegese", "badge_homiletica",
+        "criado_em", "atualizado_em",
+    )
     list_display_links = ("titulo",)
     search_fields = ("titulo", "referencia")
     ordering = ("-criado_em",)
     readonly_fields = ("criado_em", "atualizado_em")
     inlines = [TopicoEstudoInline]
     actions = [acao_exportar_txt, acao_exportar_pdf, acao_exportar_docx, acao_exportar_markdown]
+
+    # ── Badges de grupo na listagem ───────────────────────────────────────────
+
+    @admin.display(description="🔍 Herm.", boolean=True, ordering="incluir_hermeneutica")
+    def badge_hermeneutica(self, obj):
+        return obj.incluir_hermeneutica
+
+    @admin.display(description="📖 Exeg.", boolean=True, ordering="incluir_exegese")
+    def badge_exegese(self, obj):
+        return obj.incluir_exegese
+
+    @admin.display(description="🎤 Hom.")
+    def badge_homiletica(self, obj):
+        """Mostra ícones das seções de Homilética ativas."""
+        secoes = [
+            ("I", obj.incluir_introducao),
+            ("E", obj.incluir_explicacao),
+            ("A", obj.incluir_aplicacao),
+            ("C", obj.incluir_conclusao),
+            ("O", obj.incluir_oracao),
+        ]
+        partes = []
+        for sigla, ativo in secoes:
+            cor = "#198754" if ativo else "#adb5bd"
+            partes.append(
+                f'<span style="color:{cor};font-weight:bold;font-size:.8rem;" title="{sigla}">{sigla}</span>'
+            )
+        return format_html(" ".join(partes))
 
     compressed_fields = True
     warn_unsaved_changes = True
@@ -986,7 +1020,17 @@ class EstudoPessoalAdmin(UnfoldModelAdmin):
             "fields": ("titulo", "referencia", "texto_biblico", "criado_em", "atualizado_em"),
         }),
 
-        # ── HERMENÊUTICA ─────────────────────────────────────────────────────
+        # ══════════════════════════════════════════════════════════════════════
+        # HERMENÊUTICA
+        # ══════════════════════════════════════════════════════════════════════
+        ("🔍 HERMENÊUTICA", {
+            "fields": ("incluir_hermeneutica",),
+            "description": (
+                "Contexto histórico · Gênero literário · Autor e público original · "
+                "Cultura · Gramática · Contexto imediato · Contexto geral das escrituras. "
+                "Desmarque 'Incluir Hermenêutica' para excluir todo este bloco da exportação."
+            ),
+        }),
         ("🔍 Hermenêutica — Contexto Histórico", {
             "fields": (
                 "contexto_anterior", "contexto_posterior", "versiculos_relacionados",
@@ -1025,7 +1069,16 @@ class EstudoPessoalAdmin(UnfoldModelAdmin):
             "classes": ("collapse",),
         }),
 
-        # ── EXEGESE ───────────────────────────────────────────────────────────
+        # ══════════════════════════════════════════════════════════════════════
+        # EXEGESE
+        # ══════════════════════════════════════════════════════════════════════
+        ("📖 EXEGESE", {
+            "fields": ("incluir_exegese",),
+            "description": (
+                "Análise das palavras em hebraico, grego, latim, inglês e no idioma original. "
+                "Desmarque 'Incluir Exegese' para excluir todo este bloco da exportação."
+            ),
+        }),
         ("📖 Exegese — Análise das Palavras", {
             "fields": ("palavra_central", "palavra_repetida", "palavra_aprofundar", "sinonimos"),
             "description": "Identifica as palavras-chave do texto e os termos que merecem pesquisa lexical aprofundada.",
@@ -1062,7 +1115,17 @@ class EstudoPessoalAdmin(UnfoldModelAdmin):
             "classes": ("collapse",),
         }),
 
-        # ── HOMILÉTICA ────────────────────────────────────────────────────────
+        # ══════════════════════════════════════════════════════════════════════
+        # HOMILÉTICA
+        # ══════════════════════════════════════════════════════════════════════
+        ("🎤 HOMILÉTICA", {
+            "fields": (),
+            "description": (
+                "Estrutura do sermão: introdução, tópicos, explicação do texto, "
+                "aplicação prática para os dias atuais, conclusão e oração. "
+                "Desmarque as seções individualmente para excluí-las da exportação."
+            ),
+        }),
         ("🎤 Homilética — Introdução", {
             "fields": ("incluir_introducao", "introducao"),
             "description": "Abertura do sermão: gancho, problema, relevância para a congregação.",

@@ -421,9 +421,7 @@ class EstudoPessoal(models.Model):
         verbose_name="Referência Bíblica",
         help_text="Ex.: João 3:16 · Romanos 8:1-11 · Salmo 23.",
     )
-    criado_em = models.DateTimeField(auto_now_add=True, verbose_name="Criado em")
-    atualizado_em = models.DateTimeField(auto_now=True, verbose_name="Atualizado em")
-
+    
     # ── Texto e contexto ─────────────────────────────────────────────────────
     texto_biblico = models.TextField(
         blank=True, null=True,
@@ -584,6 +582,18 @@ class EstudoPessoal(models.Model):
         help_text="Qual a demanda prática, espiritual ou ética que este texto impõe ao leitor?",
     )
 
+    # ── Controle de inclusão por grupo ───────────────────────────────────────
+    incluir_hermeneutica = models.BooleanField(
+        default=True,
+        verbose_name="Incluir Hermenêutica",
+        help_text="Marque para incluir toda a seção de Hermenêutica na exportação.",
+    )
+    incluir_exegese = models.BooleanField(
+        default=True,
+        verbose_name="Incluir Exegese",
+        help_text="Marque para incluir toda a seção de Exegese na exportação.",
+    )
+
     # ── Desenvolvimento — seções opcionais ───────────────────────────────────
     incluir_introducao = models.BooleanField(
         default=True,
@@ -639,6 +649,10 @@ class EstudoPessoal(models.Model):
         verbose_name="Oração",
         help_text="Sugestão de oração para encerrar o estudo ou o culto.",
     )
+
+    criado_em = models.DateTimeField(auto_now_add=True, verbose_name="Criado em")
+    atualizado_em = models.DateTimeField(auto_now=True, verbose_name="Atualizado em")
+
 
     class Meta:
         verbose_name = "Estudo Pessoal"
