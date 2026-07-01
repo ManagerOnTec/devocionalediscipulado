@@ -428,21 +428,33 @@ class EstudoPessoal(models.Model):
         verbose_name="Texto Bíblico",
         help_text="Cole aqui o(s) versículo(s) que serão estudados.",
     )
+
+    # incluir no admin a sessao de contexto imediato / para contexto anterior e posterior
     contexto_anterior = models.TextField(
         blank=True, null=True,
         verbose_name="Contexto Anterior",
-        help_text="O que acontece antes do texto? Qual é o cenário imediatamente anterior?",
+        help_text="Contexto Imediato e anterior ao versículo citado.",
     )
     contexto_posterior = models.TextField(
         blank=True, null=True,
         verbose_name="Contexto Posterior",
-        help_text="O que acontece depois do texto? Como o contexto seguinte ilumina o trecho?",
+        help_text="Contexto Imediato e posterior ao versículo citado.",
     )
+
+    contexto_geral_escrituras = models.TextField(
+        blank=True, null=True,
+        verbose_name="Contexto Geral das Escrituras",
+        help_text="Como este texto se encaixa no contexto geral da Bíblia? Ex.: Capítulo inteiro, livro, etc.",
+    )
+
+
     versiculos_relacionados = models.TextField(
         blank=True, null=True,
         verbose_name="Versículos Relacionados",
         help_text="Concordância bíblica: liste referências que tratam do mesmo tema ou palavra-chave.",
     )
+
+
 
     # ── Palavras-chave ────────────────────────────────────────────────────────
     palavra_central = models.CharField(
@@ -451,54 +463,24 @@ class EstudoPessoal(models.Model):
         verbose_name="Palavra Central",
         help_text="A palavra mais importante do texto; eixo do estudo.",
     )
-    palavra_repetida = models.CharField(
-        max_length=200,
-        blank=True, null=True,
-        verbose_name="Palavra que se Repete",
-        help_text="Palavra com maior frequência no trecho — repetição geralmente indica ênfase.",
-    )
-    palavra_aprofundar = models.CharField(
-        max_length=200,
-        blank=True, null=True,
-        verbose_name="Palavra a Aprofundar",
-        help_text="Palavra que merece pesquisa lexical (hebraico/grego) ou teológica.",
-    )
-    sinonimos = models.TextField(
-        blank=True, null=True,
-        verbose_name="Sinônimos",
-        help_text="Sinônimos e termos equivalentes da palavra central ou palavra a aprofundar.",
-    )
 
     # ── Traduções ─────────────────────────────────────────────────────────────
-    traducao_hebraico = models.TextField(
+    traducoes = models.TextField(
         blank=True, null=True,
-        verbose_name="Tradução / Hebraico",
+        verbose_name="Tradução / Hebraico / Grego / Latim / Inglês",
         help_text="Sentido do termo no hebraico original (para textos do AT). Use Strong's ou léxico BDB.",
-    )
-    traducao_grego = models.TextField(
-        blank=True, null=True,
-        verbose_name="Tradução / Grego",
-        help_text="Sentido do termo no grego original (para textos do NT). Use Strong's, BDAG ou Thayer.",
-    )
-    traducao_latim = models.TextField(
-        blank=True, null=True,
-        verbose_name="Tradução / Latim",
-        help_text="Como a Vulgata Latina traduz o termo — útil para rastrear influência teológica medieval.",
-    )
-    traducao_ingles = models.TextField(
-        blank=True, null=True,
-        verbose_name="Tradução / Inglês",
-        help_text="Como versões em inglês (KJV, ESV, NASB) rendem o termo — amplia o espectro semântico.",
-    )
-    traducao_original = models.TextField(
-        blank=True, null=True,
-        verbose_name="Tradução / Original",
-        help_text="Análise do texto no idioma original (hebraico ou grego): transliteração, forma verbal, raiz e notas lexicais.",
     )
     observacoes_portugues = models.TextField(
         blank=True, null=True,
         verbose_name="Observações para o Português",
         help_text="Nuances da tradução para o português: diferenças entre ARC, ARA, NVI, NVT, etc.",
+    )
+
+
+    uso_antigo_novo_testamento = models.TextField(
+        blank=True, null=True,
+        verbose_name="Uso no Antigo e Novo Testamento",
+        help_text="Como este texto/palavra/tema é tratado no AT e NT? Há prefigurações, tipos ou citações?",
     )
 
     # ── Teologia e contexto histórico ────────────────────────────────────────
@@ -507,63 +489,24 @@ class EstudoPessoal(models.Model):
         verbose_name="Onde Está Cristo",
         help_text="Leitura cristológica do texto: como ele aponta para Cristo (AT) ou revela Cristo (NT)?",
     )
-    uso_antigo_testamento = models.TextField(
-        blank=True, null=True,
-        verbose_name="Uso no Antigo Testamento",
-        help_text="Como este texto/palavra/tema é tratado no AT? Há prefigurações, tipos ou citações?",
-    )
-    uso_novo_testamento = models.TextField(
-        blank=True, null=True,
-        verbose_name="Uso no Novo Testamento",
-        help_text="O NT cita, cumpre ou expande este texto? Onde e como?",
-    )
-    uso_historico_grego = models.TextField(
-        blank=True, null=True,
-        verbose_name="Uso Histórico Grego",
-        help_text="Como o termo era usado na literatura grega extrabíblica (Homero, Tucídides, LXX)?",
-    )
-    uso_historico_filosofia_antiga = models.TextField(
-        blank=True, null=True,
-        verbose_name="Uso na Filosofia Antiga",
-        help_text="Platão, Aristóteles, Estoicos: qual o sentido do conceito na filosofia clássica?",
-    )
-    filosofia_moderna = models.TextField(
-        blank=True, null=True,
-        verbose_name="Filosofia Moderna",
-        help_text="Como pensadores modernos (Kant, Hegel, Kierkegaard, etc.) tratam tema semelhante?",
-    )
-    genero_literario = models.TextField(
-        blank=True, null=True,
-        verbose_name="Gênero Literário",
-        help_text="Narrativa, poesia, lei, profecia, epístola, apocalipse? Como isso afeta a interpretação?",
-    )
-    cultura = models.TextField(
-        blank=True, null=True,
-        verbose_name="Cultura",
-        help_text="Costumes, contexto socioeconômico, político e religioso do mundo do autor/destinatário.",
-    )
-    gramatica = models.TextField(
-        blank=True, null=True,
-        verbose_name="Gramática",
-        help_text="Análise gramatical do texto: estrutura das frases, verbos, tempos, modos e formas gramaticais relevantes.",
-    )
-    intencao_autor = models.TextField(
-        blank=True, null=True,
-        verbose_name="Intenção do Autor",
-        help_text="O que o autor humano pretendia comunicar ao seu auditório original?",
-    )
+
 
     # ── Perguntas hermenêuticas ──────────────────────────────────────────────
     quem_fala = models.CharField(
         max_length=300,
         blank=True, null=True,
-        verbose_name="Quem está falando?",
+        verbose_name="AUTOR/Quem está falando?",
         help_text="Identifique o locutor: Deus, um profeta, o apóstolo, um personagem da narrativa.",
+    )
+    personagens = models.TextField(
+        blank=True, null=True,
+        verbose_name="Personagens",
+        help_text="Liste os personagens presentes no texto: protagonistas, antagonistas e figuras secundárias.",
     )
     para_quem = models.CharField(
         max_length=300,
         blank=True, null=True,
-        verbose_name="Para quem?",
+        verbose_name="Público Original/Para quem?",
         help_text="Identifique o(s) destinatário(s) original(is).",
     )
     sobre_o_que = models.TextField(
@@ -576,6 +519,8 @@ class EstudoPessoal(models.Model):
         verbose_name="Qual o objetivo?",
         help_text="O texto visa ensinar, corrigir, consolar, exortar, profetizar? Qual a finalidade?",
     )
+
+
     o_que_exige_de_mim = models.TextField(
         blank=True, null=True,
         verbose_name="O que exige de mim?",
@@ -650,6 +595,22 @@ class EstudoPessoal(models.Model):
         help_text="Sugestão de oração para encerrar o estudo ou o culto.",
     )
 
+    # ── Permissão de acesso ───────────────────────────────────────────────────
+
+    class PermissaoChoices(models.TextChoices):
+        SOMENTE_SUPERADMIN = "SOMENTE_SUPERADMIN", "Somente Superadmin"
+        LOGIN_OBRIGATORIO  = "LOGIN_OBRIGATORIO",  "Login obrigatório"
+        PUBLICO            = "PUBLICO",            "Público"
+
+    permissao = models.CharField(
+        max_length=30,
+        choices=PermissaoChoices.choices,
+        default=PermissaoChoices.SOMENTE_SUPERADMIN,
+        verbose_name="Permissão de Acesso",
+        help_text="Define quem pode visualizar este estudo nos templates.",
+    )
+
+    # ── Auditoria ─────────────────────────────────────────────────────────────
     criado_em = models.DateTimeField(auto_now_add=True, verbose_name="Criado em")
     atualizado_em = models.DateTimeField(auto_now=True, verbose_name="Atualizado em")
 
@@ -658,6 +619,14 @@ class EstudoPessoal(models.Model):
         verbose_name = "Estudo Pessoal"
         verbose_name_plural = "Estudos Pessoais"
         ordering = ["-criado_em"]
+        permissions = [
+            ("ver_estudopessoal", "Pode visualizar estudos pessoais"),
+            ("ver_hermeneutica_estudopessoal", "Pode ver seção Hermenêutica"),
+            ("ver_exegese_estudopessoal", "Pode ver seção Exegese"),
+            ("ver_homiletica_estudopessoal", "Pode ver seção Homilética"),
+            ("ver_topicos_estudopessoal", "Pode ver tópicos do estudo"),
+            ("exportar_estudopessoal", "Pode exportar estudos pessoais"),
+        ]
 
     def __str__(self):
         ref = self.referencia or "(sem referência)"

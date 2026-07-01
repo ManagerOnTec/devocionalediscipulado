@@ -713,7 +713,7 @@ def _linhas_estudo(obj) -> list:
     """
     Retorna lista de (titulo_secao, conteudo) para exportação,
     respeitando os booleans de inclusão.
-    Organizado nos 3 topicazões: Hermenêutica, Exegese, Homilética.
+    Organizado em 3 blocos: Hermenêutica, Exegese, Homilética.
     """
     secoes = []
 
@@ -730,18 +730,12 @@ def _linhas_estudo(obj) -> list:
         secoes.append(("═══ HERMENÊUTICA ═══", ""))
         add("CONTEXTO ANTERIOR", obj.contexto_anterior)
         add("CONTEXTO POSTERIOR", obj.contexto_posterior)
+        add("CONTEXTO GERAL DAS ESCRITURAS", obj.contexto_geral_escrituras)
         add("VERSÍCULOS RELACIONADOS", obj.versiculos_relacionados)
-        add("USO NO ANTIGO TESTAMENTO", obj.uso_antigo_testamento)
-        add("USO NO NOVO TESTAMENTO", obj.uso_novo_testamento)
-        add("USO HISTÓRICO GREGO", obj.uso_historico_grego)
-        add("USO NA FILOSOFIA ANTIGA", obj.uso_historico_filosofia_antiga)
-        add("FILOSOFIA MODERNA", obj.filosofia_moderna)
-        add("GÊNERO LITERÁRIO", obj.genero_literario)
+        add("USO NO ANTIGO E NOVO TESTAMENTO", obj.uso_antigo_novo_testamento)
         add("QUEM ESTÁ FALANDO?", obj.quem_fala)
+        add("PERSONAGENS", obj.personagens)
         add("PARA QUEM?", obj.para_quem)
-        add("INTENÇÃO DO AUTOR", obj.intencao_autor)
-        add("CULTURA", obj.cultura)
-        add("GRAMÁTICA", obj.gramatica)
         add("ONDE ESTÁ CRISTO", obj.onde_esta_cristo)
         add("SOBRE O QUÊ?", obj.sobre_o_que)
         add("QUAL O OBJETIVO?", obj.qual_objetivo)
@@ -751,14 +745,7 @@ def _linhas_estudo(obj) -> list:
     if obj.incluir_exegese:
         secoes.append(("═══ EXEGESE ═══", ""))
         add("PALAVRA CENTRAL", obj.palavra_central)
-        add("PALAVRA QUE SE REPETE", obj.palavra_repetida)
-        add("PALAVRA A APROFUNDAR", obj.palavra_aprofundar)
-        add("SINÔNIMOS", obj.sinonimos)
-        add("TRADUÇÃO / HEBRAICO", obj.traducao_hebraico)
-        add("TRADUÇÃO / GREGO", obj.traducao_grego)
-        add("TRADUÇÃO / LATIM", obj.traducao_latim)
-        add("TRADUÇÃO / INGLÊS", obj.traducao_ingles)
-        add("TRADUÇÃO / ORIGINAL", obj.traducao_original)
+        add("TRADUÇÃO / HEBRAICO / GREGO / LATIM / INGLÊS", obj.traducoes)
         add("OBSERVAÇÕES PARA O PORTUGUÊS", obj.observacoes_portugues)
 
     # ── HOMILÉTICA ────────────────────────────────────────────────────────────
@@ -973,9 +960,14 @@ class EstudoPessoalAdmin(UnfoldModelAdmin):
     """Visível e editável somente por superadmin."""
 
     list_display = (
-        "titulo", "referencia",
-        "badge_hermeneutica", "badge_exegese", "badge_homiletica",
-        "criado_em", "atualizado_em",
+        "titulo",
+        "referencia",
+        "permissao",
+        "badge_hermeneutica",
+        "badge_exegese",
+        "badge_homiletica",
+        "criado_em",
+        "atualizado_em",
     )
     list_display_links = ("titulo",)
     search_fields = ("titulo", "referencia")
@@ -984,7 +976,7 @@ class EstudoPessoalAdmin(UnfoldModelAdmin):
     inlines = [TopicoEstudoInline]
     actions = [acao_exportar_txt, acao_exportar_pdf, acao_exportar_docx, acao_exportar_markdown]
 
-    # ── Badges de grupo na listagem ───────────────────────────────────────────
+    # ── Badges de grupo na listagem ───────────────────────────────────────
 
     @admin.display(description="🔍 Herm.", boolean=True, ordering="incluir_hermeneutica")
     def badge_hermeneutica(self, obj):
@@ -1017,7 +1009,7 @@ class EstudoPessoalAdmin(UnfoldModelAdmin):
 
     fieldsets = [
         ("Identificação", {
-            "fields": ("titulo", "referencia", "texto_biblico", "criado_em", "atualizado_em"),
+            "fields": ("titulo", "referencia", "permissao", "texto_biblico"),
         }),
 
         # ══════════════════════════════════════════════════════════════════════
@@ -1026,46 +1018,27 @@ class EstudoPessoalAdmin(UnfoldModelAdmin):
         ("🔍 HERMENÊUTICA", {
             "fields": ("incluir_hermeneutica",),
             "description": (
-                "Contexto histórico · Gênero literário · Autor e público original · "
-                "Cultura · Gramática · Contexto imediato · Contexto geral das escrituras. "
+                "Contexto histórico · Perguntas hermenêuticas · Uso no AT e NT · "
+                "Onde está Cristo. "
                 "Desmarque 'Incluir Hermenêutica' para excluir todo este bloco da exportação."
             ),
         }),
-        ("🔍 Hermenêutica — Contexto Histórico", {
+        ("🔍 Hermenêutica — Contexto", {
             "fields": (
-                "contexto_anterior", "contexto_posterior", "versiculos_relacionados",
-                "uso_antigo_testamento", "uso_novo_testamento",
-                "uso_historico_grego", "uso_historico_filosofia_antiga", "filosofia_moderna",
+                "contexto_anterior", "contexto_posterior",
+                "contexto_geral_escrituras", "versiculos_relacionados",
             ),
-            "description": (
-                "Situa o texto no tempo: o que acontece antes e depois, como o AT/NT se "
-                "relacionam, e como a história e a filosofia contextualizam o trecho."
-            ),
+            "description": "Contexto imediato (anterior e posterior), contexto geral das Escrituras e versículos relacionados.",
             "classes": ("collapse",),
         }),
-        ("🔍 Hermenêutica — Gênero Literário", {
-            "fields": ("genero_literario",),
-            "description": "Narrativa, poesia, lei, profecia, epístola, apocalipse? O gênero define as regras de interpretação.",
+        ("🔍 Hermenêutica — Perguntas Hermenêuticas", {
+            "fields": ("quem_fala", "personagens", "para_quem", "sobre_o_que", "qual_objetivo", "o_que_exige_de_mim"),
+            "description": "Identifica quem fala, a quem fala, o assunto central, a finalidade e a demanda ao leitor.",
             "classes": ("collapse",),
         }),
-        ("🔍 Hermenêutica — Autor e Público Original", {
-            "fields": ("quem_fala", "para_quem", "intencao_autor"),
-            "description": "Identifica quem fala, a quem fala e o que pretendia comunicar ao auditório original.",
-            "classes": ("collapse",),
-        }),
-        ("🔍 Hermenêutica — Cultura", {
-            "fields": ("cultura",),
-            "description": "Costumes, contexto socioeconômico, político e religioso do mundo do autor/destinatário.",
-            "classes": ("collapse",),
-        }),
-        ("🔍 Hermenêutica — Gramática", {
-            "fields": ("gramatica",),
-            "description": "Análise gramatical: estrutura das frases, verbos, tempos, modos e formas relevantes do texto.",
-            "classes": ("collapse",),
-        }),
-        ("🔍 Hermenêutica — Contexto Geral das Escrituras", {
-            "fields": ("onde_esta_cristo", "sobre_o_que", "qual_objetivo", "o_que_exige_de_mim"),
-            "description": "Como o texto se encaixa no grande arco das Escrituras: leitura cristológica, tema central e demanda ao leitor.",
+        ("🔍 Hermenêutica — Teologia e Contexto Geral", {
+            "fields": ("onde_esta_cristo", "uso_antigo_novo_testamento"),
+            "description": "Leitura cristológica e como o texto/tema é tratado no AT e NT.",
             "classes": ("collapse",),
         }),
 
@@ -1075,43 +1048,18 @@ class EstudoPessoalAdmin(UnfoldModelAdmin):
         ("📖 EXEGESE", {
             "fields": ("incluir_exegese",),
             "description": (
-                "Análise das palavras em hebraico, grego, latim, inglês e no idioma original. "
+                "Análise das palavras: hebraico, grego, latim, inglês e observações para o português. "
                 "Desmarque 'Incluir Exegese' para excluir todo este bloco da exportação."
             ),
         }),
-        ("📖 Exegese — Análise das Palavras", {
-            "fields": ("palavra_central", "palavra_repetida", "palavra_aprofundar", "sinonimos"),
-            "description": "Identifica as palavras-chave do texto e os termos que merecem pesquisa lexical aprofundada.",
+        ("📖 Exegese — Palavra Central", {
+            "fields": ("palavra_central",),
+            "description": "A palavra mais importante do texto; eixo do estudo.",
             "classes": ("collapse",),
         }),
-        ("📖 Exegese — Hebraico", {
-            "fields": ("traducao_hebraico",),
-            "description": "Sentido do termo no hebraico original (AT). Use Strong's ou léxico BDB.",
-            "classes": ("collapse",),
-        }),
-        ("📖 Exegese — Grego", {
-            "fields": ("traducao_grego",),
-            "description": "Sentido do termo no grego original (NT). Use Strong's, BDAG ou Thayer.",
-            "classes": ("collapse",),
-        }),
-        ("📖 Exegese — Latim", {
-            "fields": ("traducao_latim",),
-            "description": "Como a Vulgata Latina traduz o termo — rastreamento da influência teológica medieval.",
-            "classes": ("collapse",),
-        }),
-        ("📖 Exegese — Inglês", {
-            "fields": ("traducao_ingles",),
-            "description": "Como versões em inglês (KJV, ESV, NASB) rendem o termo — amplia o espectro semântico.",
-            "classes": ("collapse",),
-        }),
-        ("📖 Exegese — Original", {
-            "fields": ("traducao_original",),
-            "description": "Análise do texto no idioma original: transliteração, forma verbal, raiz e notas lexicais.",
-            "classes": ("collapse",),
-        }),
-        ("📖 Exegese — Observações para o Português", {
-            "fields": ("observacoes_portugues",),
-            "description": "Nuances da tradução para o português: diferenças entre ARC, ARA, NVI, NVT, etc.",
+        ("📖 Exegese — Traduções e Léxico", {
+            "fields": ("traducoes", "observacoes_portugues"),
+            "description": "Sentido do termo em hebraico, grego, latim, inglês e no idioma original. Diferenças entre versões em português.",
             "classes": ("collapse",),
         }),
 
@@ -1122,7 +1070,7 @@ class EstudoPessoalAdmin(UnfoldModelAdmin):
             "fields": (),
             "description": (
                 "Estrutura do sermão: introdução, tópicos, explicação do texto, "
-                "aplicação prática para os dias atuais, conclusão e oração. "
+                "aplicação prática, conclusão e oração. "
                 "Desmarque as seções individualmente para excluí-las da exportação."
             ),
         }),
@@ -1157,6 +1105,15 @@ class EstudoPessoalAdmin(UnfoldModelAdmin):
         ("🎤 Homilética — Oração", {
             "fields": ("incluir_oracao", "oracao"),
             "description": "Sugestão de oração para encerrar o sermão ou culto.",
+            "classes": ("collapse",),
+        }),
+
+        # ══════════════════════════════════════════════════════════════════════
+        # AUDITORIA
+        # ══════════════════════════════════════════════════════════════════════
+        ("Auditoria", {
+            "fields": ("criado_em", "atualizado_em"),
+            "description": "Informações sobre criação e atualização do registro.",
             "classes": ("collapse",),
         }),
     ]
