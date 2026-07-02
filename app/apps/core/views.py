@@ -22,8 +22,11 @@ class HomeView(TemplateView):
         context["titulo"] = "Devocional e Discipulado"
         context["subtitulo"] = "Sistema de gestão de devocionais e discipulado"
         if self.request.user.is_authenticated and self.request.user.is_superuser:
-            from apps.estudo.models import Topico
-            context["topicos_estudo_pessoal"] = (
-                Topico.objects.order_by("ordem", "titulo")[:6]
-            )
+            try:
+                from apps.estudo.models import Topico
+                context["topicos_estudo_pessoal"] = list(
+                    Topico.objects.order_by("ordem", "titulo")[:6]
+                )
+            except Exception:
+                context["topicos_estudo_pessoal"] = []
         return context
