@@ -34,7 +34,7 @@
     <h2 class="h4 fw-semibold mb-0">
       <i class="bi bi-book me-2 text-primary"></i>Estudos Pessoais
     </h2>
-    <a href="/estudo/estudos-pessoais/" class="btn btn-sm btn-outline-primary">
+    <a href="{% url 'estudo:estudopessoal_lista' %}" class="btn btn-sm btn-outline-primary">
       Ver todos
     </a>
   </div>
@@ -42,7 +42,7 @@
   <div class="row g-3">
     {% for topico in topicos_estudo_pessoal %}
     <div class="col-12 col-sm-6 col-lg-4">
-      <a href="/estudo/estudos-pessoais/topico/{{ topico.pk }}/" class="text-decoration-none">
+      <a href="{% url 'estudo:topico_detalhe' topico.pk %}" class="text-decoration-none">
         <div class="card h-100 shadow-sm border-0 overflow-hidden">
           {% if topico.imagem_capa_url %}
           <img src="{{ topico.imagem_capa_url }}" alt="{{ topico.titulo }}"

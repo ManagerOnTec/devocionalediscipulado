@@ -1025,8 +1025,10 @@ class EstudoPessoalAdmin(UnfoldModelAdmin):
 
     list_display = (
         "titulo",
+        "topico_link",
         "referencia",
         "permissao",
+        "permissao_efetiva_display",
         "badge_hermeneutica",
         "badge_exegese",
         "badge_homiletica",
@@ -1034,7 +1036,8 @@ class EstudoPessoalAdmin(UnfoldModelAdmin):
         "atualizado_em",
     )
     list_display_links = ("titulo",)
-    search_fields = ("titulo", "referencia")
+    list_filter = ("topico", "permissao")
+    search_fields = ("titulo", "referencia", "topico__titulo")
     ordering = ("-criado_em",)
     readonly_fields = ("criado_em", "atualizado_em")
     inlines = [TopicoEstudoInline]
@@ -1043,6 +1046,46 @@ class EstudoPessoalAdmin(UnfoldModelAdmin):
 
     class Media:
         css = {"all": ("css/admin_overrides.css",)}
+
+    # ── Tópico com link ───────────────────────────────────────────────────
+
+    @admin.display(description="Tópico", ordering="topico__titulo")
+    def topico_link(self, obj):
+        """Exibe o tópico com link para sua página de edição."""
+        if not obj.topico_id:
+            return "—"
+        url = reverse("admin:estudo_topico_change", args=[obj.topico_id])
+        return format_html('<a href="{}">{}</a>', url, obj.topico.titulo)
+
+    # ── Permissão efetiva (tópico prevalece quando mais restritiva) ───────
+
+    _PERM_PRIORIDADE = {
+        "SOMENTE_SUPERADMIN": 3,
+        "LOGIN_OBRIGATORIO": 2,
+        "PUBLICO": 1,
+    }
+    _PERM_LABELS = {
+        "SOMENTE_SUPERADMIN": ("🔒 Só superadmin", "#dc3545"),
+        "LOGIN_OBRIGATORIO": ("🔐 Login obrig.", "#fd7e14"),
+        "PUBLICO": ("🌐 Público", "#198754"),
+    }
+
+    @admin.display(description="Permissão efetiva")
+    def permissao_efetiva_display(self, obj):
+        """Mostra a permissão real considerando que o tópico pode substituir a do estudo."""
+        ep = obj.permissao or "SOMENTE_SUPERADMIN"
+        efetiva = ep
+        sobreposta = False
+        if obj.topico_id:
+            tp = obj.topico.permissao or "SOMENTE_SUPERADMIN"
+            if self._PERM_PRIORIDADE.get(tp, 3) >= self._PERM_PRIORIDADE.get(ep, 3):
+                efetiva = tp
+                sobreposta = tp != ep
+        label, cor = self._PERM_LABELS.get(efetiva, (efetiva, "#6c757d"))
+        badge = f'<span style="color:{cor};font-weight:600;">{label}</span>'
+        if sobreposta:
+            badge += ' <span style="color:#6c757d;font-size:.75rem;" title="Permissão herdada do tópico">(tópico)</span>'
+        return format_html(badge)
 
     # ── Badges de grupo na listagem ───────────────────────────────────────
 
@@ -1185,6 +1228,11 @@ class EstudoPessoalAdmin(UnfoldModelAdmin):
             "classes": ("collapse",),
         }),
     ]
+
+    # ── Queryset otimizado (evita N+1 no topico_link e permissao_efetiva) ───────
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related("topico")
 
     # ── Restrição total a superadmin ─────────────────────────────────────────
 
