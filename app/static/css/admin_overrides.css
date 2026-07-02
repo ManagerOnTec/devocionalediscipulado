@@ -66,3 +66,34 @@ select:focus {
     border-color: #60a5fa !important; /* primary-400 — mais claro para dark mode */
     box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.25) !important;
 }
+
+/* ── Inline tabular — bordas distintas (light e dark) ──────────────────────── */
+.inline-group .tabular .form-row,
+.inline-group .tabular tr.has_original,
+.inline-group .tabular tr.dynamic-form,
+.inline-group .tabular tr.empty-form {
+    border: 1px solid #cbd5e1 !important;  /* slate-300 — visível no light */
+    border-radius: 6px;
+    margin-bottom: 4px;
+}
+
+/* dark mode — borda mais clara */
+.dark .inline-group .tabular .form-row,
+.dark .inline-group .tabular tr.has_original,
+.dark .inline-group .tabular tr.dynamic-form,
+.dark .inline-group .tabular tr.empty-form {
+    border-color: #475569 !important;  /* slate-600 — visível sobre fundo escuro */
+}
+
+/* stacked inline — caixa completa */
+.inline-group .stacked .inline-related {
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 8px;
+    background: transparent;
+}
+
+.dark .inline-group .stacked .inline-related {
+    border-color: #475569 !important;
+}

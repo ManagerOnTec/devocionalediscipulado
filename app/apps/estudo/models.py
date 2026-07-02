@@ -39,6 +39,7 @@ class Trilha(BaseModel):
         PUBLICO              = "PUBLICO",              "Público"
         LOGIN_OBRIGATORIO    = "LOGIN_OBRIGATORIO",    "Login obrigatório"
         PERMISSAO_ESPECIFICA = "PERMISSAO_ESPECIFICA", "Permissão específica"
+        SOMENTE_PROPRIETARIO = "SOMENTE_PROPRIETARIO", "Somente proprietário"
 
     titulo = models.CharField(
         max_length=200,
@@ -402,7 +403,12 @@ class ProgressoTema(TimeStampedModel):
 # ─────────────────────────────────────────────────────────────────────────────
 
 class Topico(models.Model):
-    """Pasta/categoria que agrupa Estudos Pessoais."""
+    """Pasta/categoria que organiza Estudos Pessoais. A permissão do Tópico se aplica a todos os estudos dentro dele."""
+
+    class PermissaoChoices(models.TextChoices):
+        SOMENTE_SUPERADMIN = "SOMENTE_SUPERADMIN", "Somente Superadmin"
+        LOGIN_OBRIGATORIO  = "LOGIN_OBRIGATORIO",  "Login obrigatório"
+        PUBLICO            = "PUBLICO",            "Público"
 
     titulo = models.CharField(
         max_length=200,
@@ -413,38 +419,12 @@ class Topico(models.Model):
         blank=True,
         verbose_name="Descrição",
     )
-    ordem = models.PositiveIntegerField(
-        default=0,
-        db_index=True,
-        verbose_name="Ordem",
-    )
-    criado_em = models.DateTimeField(auto_now_add=True, verbose_name="Criado em")
-    atualizado_em = models.DateTimeField(auto_now=True, verbose_name="Atualizado em")
-
-    class Meta:
-        verbose_name = "Tópico"
-        verbose_name_plural = "Tópicos de Estudos Pessoais"
-        ordering = ["ordem", "titulo"]
-
-    def __str__(self):
-        return self.titulo
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Topico — agrupa EstudoPessoal (como Trilha agrupa Módulos)
-# ─────────────────────────────────────────────────────────────────────────────
-
-class Topico(models.Model):
-    """Pasta/categoria que organiza Estudos Pessoais."""
-
-    titulo = models.CharField(
-        max_length=200,
-        verbose_name="Título",
-        help_text="Ex.: 'Evangelhos', 'Cartas de Paulo', 'Sermões sobre Fé'.",
-    )
-    descricao = models.TextField(
-        blank=True,
-        verbose_name="Descrição",
+    permissao = models.CharField(
+        max_length=30,
+        choices=PermissaoChoices.choices,
+        default=PermissaoChoices.SOMENTE_SUPERADMIN,
+        verbose_name="Permissão de Acesso",
+        help_text="Define quem pode visualizar todos os estudos deste tópico. Aplica-se a todos os EstudoPessoal dentro dele.",
     )
     ordem = models.PositiveIntegerField(
         default=0,
@@ -482,7 +462,7 @@ class EstudoPessoal(models.Model):
         blank=True,
         related_name="estudos",
         verbose_name="Tópico",
-        help_text="Tópico ao qual este estudo pertence.",
+        help_text="Tópico ao qual este estudo pertence. A permissão do tópico se aplica a este estudo.",
     )
     titulo = models.CharField(
         max_length=300,
@@ -495,15 +475,6 @@ class EstudoPessoal(models.Model):
         blank=True, null=True,
         verbose_name="Referência Bíblica",
         help_text="Ex.: João 3:16 · Romanos 8:1-11 · Salmo 23.",
-    )
-    topico = models.ForeignKey(
-        "Topico",
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name="estudos",
-        verbose_name="Tópico",
-        help_text="Tópico ao qual este estudo pertence.",
     )
 
     # ── Texto e contexto ─────────────────────────────────────────────────────

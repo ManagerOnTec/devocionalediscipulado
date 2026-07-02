@@ -972,12 +972,30 @@ class EstudoPessoalInline(admin.TabularInline):
 class TopicoAdmin(UnfoldModelAdmin):
     """Pasta/categoria de Estudos Pessoais — apenas superadmin."""
 
-    list_display = ("titulo", "total_estudos", "ordem", "criado_em")
+    list_display = ("titulo", "permissao", "total_estudos", "ordem", "criado_em")
     list_display_links = ("titulo",)
     search_fields = ("titulo",)
     ordering = ("ordem", "titulo")
     inlines = [EstudoPessoalInline]
     compressed_fields = True
+    warn_unsaved_changes = True
+
+    fieldsets = [
+        ("Identificação", {
+            "fields": ("titulo", "descricao", "permissao", "ordem"),
+            "description": (
+                "A permissão definida aqui é superior e se aplica a todos os Estudos Pessoais deste tópico. "
+                "Se o tópico for 'Login Obrigatório', todos os estudos dentro dele exigem login, "
+                "independentemente da permissão individual de cada estudo."
+            ),
+        }),
+        ("Auditoria", {
+            "fields": ("criado_em", "atualizado_em"),
+            "classes": ("collapse",),
+        }),
+    ]
+
+    readonly_fields = ("criado_em", "atualizado_em")
 
     @admin.display(description="Estudos")
     def total_estudos(self, obj):
@@ -1021,6 +1039,9 @@ class EstudoPessoalAdmin(UnfoldModelAdmin):
     readonly_fields = ("criado_em", "atualizado_em")
     inlines = [TopicoEstudoInline]
     actions = [acao_exportar_txt, acao_exportar_pdf, acao_exportar_docx, acao_exportar_markdown]
+
+    class Media:
+        css = {"all": ("css/admin_overrides.css",)}
 
     # ── Badges de grupo na listagem ───────────────────────────────────────
 
