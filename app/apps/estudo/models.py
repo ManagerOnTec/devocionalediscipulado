@@ -410,6 +410,11 @@ class Topico(models.Model):
         LOGIN_OBRIGATORIO  = "LOGIN_OBRIGATORIO",  "Login obrigatório"
         PUBLICO            = "PUBLICO",            "Público"
 
+    class ImagemChoices(models.TextChoices):
+        ESTUDO_PESSOAL = "estudopessoal.jpg", "Estudo Pessoal"
+        DEVOCIONAL     = "devocional.jpg",    "Devocional"
+        DISCIPULADO    = "discipulado.jpg",   "Discipulado"
+
     titulo = models.CharField(
         max_length=200,
         verbose_name="Título",
@@ -418,6 +423,15 @@ class Topico(models.Model):
     descricao = models.TextField(
         blank=True,
         verbose_name="Descrição",
+    )
+    imagem_capa = models.CharField(
+        max_length=50,
+        blank=True,
+        null=True,
+        default="estudopessoal.jpg",
+        choices=ImagemChoices.choices,
+        verbose_name="Imagem de Capa",
+        help_text="Imagem exibida nos cards (escolha da lista de imagens estáticas).",
     )
     permissao = models.CharField(
         max_length=30,
@@ -441,6 +455,13 @@ class Topico(models.Model):
 
     def __str__(self):
         return self.titulo
+
+    @property
+    def imagem_capa_url(self) -> str:
+        """Retorna a URL estática da imagem selecionada, ou string vazia."""
+        if not self.imagem_capa:
+            return ""
+        return static(f"images/{self.imagem_capa}")
 
 
 # ─────────────────────────────────────────────────────────────────────────────

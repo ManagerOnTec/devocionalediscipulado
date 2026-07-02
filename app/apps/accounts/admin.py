@@ -108,7 +108,7 @@ class CustomUserAdmin(StaffAccessMixin, UnfoldModelAdmin, UserAdmin):
         "dark_mode",
         "criado_em",
     )
-    list_display_links = ("foto_thumbnail", "nome_completo", "email")
+    list_display_links = ("nome_completo", "email")
     list_editable = ("is_active", "is_staff", "is_lider", "dark_mode")
     list_filter = (AtivoPorPadraoFilter, "is_staff", "is_superuser", "is_lider", "timezone", "dark_mode")
     search_fields = ("email", "nome_completo", "telefone")
@@ -128,7 +128,7 @@ class CustomUserAdmin(StaffAccessMixin, UnfoldModelAdmin, UserAdmin):
         (
             "Dados Pessoais",
             {
-                "fields": ("nome_completo", "foto", "telefone"),
+                "fields": ("nome_completo", "telefone"),
             },
         ),
         (

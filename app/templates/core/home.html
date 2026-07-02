@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block titulo %}{{ titulo }} — Início{% endblock %}
 {% block meta_description %}{{ subtitulo }}{% endblock %}
@@ -25,4 +26,54 @@
         {% endif %}
     </div>
 </div>
+
+{# ── Estudos Pessoais (superadmin only) ───────────────────────────────────── #}
+{% if user.is_superuser and topicos_estudo_pessoal %}
+<div class="container pb-5">
+  <div class="d-flex align-items-center justify-content-between mb-3">
+    <h2 class="h4 fw-semibold mb-0">
+      <i class="bi bi-book me-2 text-primary"></i>Estudos Pessoais
+    </h2>
+    <a href="{% url 'estudo:estudopessoal_lista' %}" class="btn btn-sm btn-outline-primary">
+      Ver todos
+    </a>
+  </div>
+  <div class="row g-3">
+    {% for topico in topicos_estudo_pessoal %}
+    <div class="col-12 col-sm-6 col-lg-4">
+      <a href="{% url 'estudo:topico_detalhe' topico.pk %}" class="text-decoration-none">
+        <div class="card h-100 shadow-sm border-0 overflow-hidden">
+          {% if topico.imagem_capa_url %}
+          <img src="{{ topico.imagem_capa_url }}" alt="{{ topico.titulo }}"
+               class="card-img-top" style="height:120px;object-fit:cover;">
+          {% else %}
+          <div class="bg-secondary bg-opacity-10 d-flex align-items-center justify-content-center"
+               style="height:120px;">
+            <i class="bi bi-folder2-open text-secondary" style="font-size:2.5rem;"></i>
+          </div>
+          {% endif %}
+          <div class="card-body py-2 px-3">
+            <h6 class="card-title fw-semibold mb-1 text-body">{{ topico.titulo }}</h6>
+            <p class="text-muted mb-0" style="font-size:.8rem;">
+              {{ topico.estudos.count }} estudo(s)
+            </p>
+          </div>
+        </div>
+      </a>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% elif user.is_superuser %}
+<div class="container pb-5">
+  <div class="d-flex align-items-center justify-content-between mb-3">
+    <h2 class="h4 fw-semibold mb-0">
+      <i class="bi bi-book me-2 text-primary"></i>Estudos Pessoais
+    </h2>
+    <a href="{% url 'estudo:estudopessoal_lista' %}" class="btn btn-sm btn-outline-primary">
+      Acessar
+    </a>
+  </div>
+</div>
+{% endif %}
 {% endblock %}

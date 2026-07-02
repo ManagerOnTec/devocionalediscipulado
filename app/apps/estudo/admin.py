@@ -982,7 +982,7 @@ class TopicoAdmin(UnfoldModelAdmin):
 
     fieldsets = [
         ("Identificação", {
-            "fields": ("titulo", "descricao", "permissao", "ordem"),
+            "fields": ("titulo", "descricao", "imagem_capa", "permissao", "ordem"),
             "description": (
                 "A permissão definida aqui é superior e se aplica a todos os Estudos Pessoais deste tópico. "
                 "Se o tópico for 'Login Obrigatório', todos os estudos dentro dele exigem login, "
@@ -1038,6 +1038,7 @@ class EstudoPessoalAdmin(UnfoldModelAdmin):
     ordering = ("-criado_em",)
     readonly_fields = ("criado_em", "atualizado_em")
     inlines = [TopicoEstudoInline]
+    autocomplete_fields = ("topico",)
     actions = [acao_exportar_txt, acao_exportar_pdf, acao_exportar_docx, acao_exportar_markdown]
 
     class Media:

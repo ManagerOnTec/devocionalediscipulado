@@ -367,7 +367,44 @@ class MeuProgressoView(LoginRequiredMixin, TemplateView):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# EstudoPessoal — visualização exclusiva para superadmin
+# EstudoPessoal — helpers de permissão
+# ─────────────────────────────────────────────────────────────────────────────
+
+_PERMISSAO_PRIORIDADE = {
+    "SOMENTE_SUPERADMIN": 2,
+    "LOGIN_OBRIGATORIO":  1,
+    "PUBLICO":            0,
+}
+
+
+def _permissao_efetiva(estudo):
+    """
+    Retorna a permissão mais restritiva entre o tópico (superior) e o estudo.
+    Se o tópico tiver permissão definida, ela prevalece quando for mais restritiva.
+    """
+    ep = estudo.permissao or "SOMENTE_SUPERADMIN"
+    if estudo.topico_id:
+        tp = estudo.topico.permissao or "SOMENTE_SUPERADMIN"
+        return tp if _PERMISSAO_PRIORIDADE.get(tp, 2) >= _PERMISSAO_PRIORIDADE.get(ep, 2) else ep
+    return ep
+
+
+def _verificar_permissao_estudo(request, permissao):
+    """
+    Verifica acesso com base na permissão efetiva de um EstudoPessoal.
+    Retorna True se o acesso é permitido.
+    """
+    if request.user.is_superuser:
+        return True
+    if permissao == "SOMENTE_SUPERADMIN":
+        return False
+    if permissao == "LOGIN_OBRIGATORIO":
+        return request.user.is_authenticated
+    return True  # PUBLICO
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# EstudoPessoal — views
 # ─────────────────────────────────────────────────────────────────────────────
 
 class EstudoPessoalListView(LoginRequiredMixin, ListView):
@@ -412,14 +449,28 @@ class TopicoDetalheView(LoginRequiredMixin, DetailView):
 
 
 class EstudoPessoalDetalheView(LoginRequiredMixin, DetailView):
-    """Detalhe completo de um estudo pessoal — apenas superadmin."""
+    """Detalhe completo de um estudo pessoal.
+
+    Acesso controlado pela permissão efetiva: a do Tópico (superior)
+    prevalece sobre a do próprio EstudoPessoal quando mais restritiva.
+    """
 
     model = EstudoPessoal
     template_name = "estudo/estudopessoal_detalhe.html"
     context_object_name = "estudo"
 
+    def get_queryset(self):
+        return EstudoPessoal.objects.select_related("topico")
+
     def dispatch(self, request, *args, **kwargs):
-        if not request.user.is_superuser:
+        obj = get_object_or_404(
+            EstudoPessoal.objects.select_related("topico"),
+            pk=kwargs["pk"],
+        )
+        permissao = _permissao_efetiva(obj)
+        if not _verificar_permissao_estudo(request, permissao):
+            if not request.user.is_authenticated:
+                return redirect_to_login(request.get_full_path())
             raise PermissionDenied
         return super().dispatch(request, *args, **kwargs)
 
