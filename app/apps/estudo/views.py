@@ -20,7 +20,7 @@ from django.shortcuts import get_object_or_404, redirect
 from django.views import View
 from django.views.generic import DetailView, ListView, TemplateView
 
-from .models import Modulo, ProgressoTema, Tema, Trilha, EstudoPessoal
+from .models import Modulo, ProgressoTema, Tema, Trilha, EstudoPessoal, Topico
 
 User = get_user_model()
 
@@ -371,17 +371,44 @@ class MeuProgressoView(LoginRequiredMixin, TemplateView):
 # ─────────────────────────────────────────────────────────────────────────────
 
 class EstudoPessoalListView(LoginRequiredMixin, ListView):
-    """Lista de estudos pessoais — apenas superadmin."""
+    """Lista de tópicos de estudo pessoal — apenas superadmin."""
 
-    model = EstudoPessoal
+    model = Topico
     template_name = "estudo/estudopessoal_lista.html"
-    context_object_name = "estudos"
-    ordering = ["-criado_em"]
+    context_object_name = "topicos"
+    ordering = ["ordem", "titulo"]
 
     def dispatch(self, request, *args, **kwargs):
         if not request.user.is_superuser:
             raise PermissionDenied
         return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["estudos_sem_topico"] = (
+            EstudoPessoal.objects
+            .filter(topico__isnull=True)
+            .order_by("-criado_em")
+        )
+        return context
+
+
+class TopicoDetalheView(LoginRequiredMixin, DetailView):
+    """Estudos de um tópico — apenas superadmin."""
+
+    model = Topico
+    template_name = "estudo/topico_detalhe.html"
+    context_object_name = "topico"
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_superuser:
+            raise PermissionDenied
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["estudos"] = self.object.estudos.order_by("-criado_em")
+        return context
 
 
 class EstudoPessoalDetalheView(LoginRequiredMixin, DetailView):

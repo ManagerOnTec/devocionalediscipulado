@@ -398,6 +398,72 @@ class ProgressoTema(TimeStampedModel):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# Topico — agrupa EstudoPessoal (como Trilha agrupa Módulos)
+# ─────────────────────────────────────────────────────────────────────────────
+
+class Topico(models.Model):
+    """Pasta/categoria que agrupa Estudos Pessoais."""
+
+    titulo = models.CharField(
+        max_length=200,
+        verbose_name="Título",
+        help_text="Ex.: 'Evangelhos', 'Cartas de Paulo', 'Sermões sobre Fé'.",
+    )
+    descricao = models.TextField(
+        blank=True,
+        verbose_name="Descrição",
+    )
+    ordem = models.PositiveIntegerField(
+        default=0,
+        db_index=True,
+        verbose_name="Ordem",
+    )
+    criado_em = models.DateTimeField(auto_now_add=True, verbose_name="Criado em")
+    atualizado_em = models.DateTimeField(auto_now=True, verbose_name="Atualizado em")
+
+    class Meta:
+        verbose_name = "Tópico"
+        verbose_name_plural = "Tópicos de Estudos Pessoais"
+        ordering = ["ordem", "titulo"]
+
+    def __str__(self):
+        return self.titulo
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Topico — agrupa EstudoPessoal (como Trilha agrupa Módulos)
+# ─────────────────────────────────────────────────────────────────────────────
+
+class Topico(models.Model):
+    """Pasta/categoria que organiza Estudos Pessoais."""
+
+    titulo = models.CharField(
+        max_length=200,
+        verbose_name="Título",
+        help_text="Ex.: 'Evangelhos', 'Cartas de Paulo', 'Sermões sobre Fé'.",
+    )
+    descricao = models.TextField(
+        blank=True,
+        verbose_name="Descrição",
+    )
+    ordem = models.PositiveIntegerField(
+        default=0,
+        db_index=True,
+        verbose_name="Ordem",
+    )
+    criado_em = models.DateTimeField(auto_now_add=True, verbose_name="Criado em")
+    atualizado_em = models.DateTimeField(auto_now=True, verbose_name="Atualizado em")
+
+    class Meta:
+        verbose_name = "Tópico"
+        verbose_name_plural = "Tópicos de Estudos Pessoais"
+        ordering = ["ordem", "titulo"]
+
+    def __str__(self):
+        return self.titulo
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # EstudoPessoal  (visível apenas para superadmin)
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -409,6 +475,15 @@ class EstudoPessoal(models.Model):
     """
 
     # ── Identificação ────────────────────────────────────────────────────────
+    topico = models.ForeignKey(
+        "Topico",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="estudos",
+        verbose_name="Tópico",
+        help_text="Tópico ao qual este estudo pertence.",
+    )
     titulo = models.CharField(
         max_length=300,
         blank=True, null=True,
@@ -421,7 +496,16 @@ class EstudoPessoal(models.Model):
         verbose_name="Referência Bíblica",
         help_text="Ex.: João 3:16 · Romanos 8:1-11 · Salmo 23.",
     )
-    
+    topico = models.ForeignKey(
+        "Topico",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="estudos",
+        verbose_name="Tópico",
+        help_text="Tópico ao qual este estudo pertence.",
+    )
+
     # ── Texto e contexto ─────────────────────────────────────────────────────
     texto_biblico = models.TextField(
         blank=True, null=True,

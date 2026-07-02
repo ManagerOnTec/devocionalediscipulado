@@ -30,5 +30,6 @@ urlpatterns = [
 
     # ── Estudos Pessoais (superadmin only) ───────────────────────────────────
     path("estudos-pessoais/", views.EstudoPessoalListView.as_view(), name="estudopessoal_lista"),
+    path("estudos-pessoais/topico/<int:pk>/", views.TopicoDetalheView.as_view(), name="topico_detalhe"),
     path("estudos-pessoais/<int:pk>/", views.EstudoPessoalDetalheView.as_view(), name="estudopessoal_detalhe"),
 ]

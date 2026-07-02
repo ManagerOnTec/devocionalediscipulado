@@ -49,6 +49,9 @@ Blocos disponíveis:
         rel="stylesheet"
     >
 
+    <!-- Google Material Symbols -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+
     <!-- CSS customizado do projeto -->
     <link rel="stylesheet" href="{% static 'css/main.css' %}?v=2">
 
@@ -89,6 +92,13 @@ Blocos disponíveis:
                             <i class="bi bi-journal-bookmark me-1" aria-hidden="true"></i>Estudos
                         </a>
                     </li>
+                    {% if user.is_superuser %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'estudo:estudopessoal_lista' %}">
+                            <i class="bi bi-book me-1" aria-hidden="true"></i>Estudos Pessoais
+                        </a>
+                    </li>
+                    {% endif %}
                 </ul>
                 <ul class="navbar-nav ms-auto align-items-lg-center gap-1">
                     {% if user.is_authenticated %}

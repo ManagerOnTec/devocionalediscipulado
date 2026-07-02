@@ -1,5 +1,4 @@
 {% extends "base.html" %}
-{% load static %}
 
 {% block titulo %}Estudos Pessoais{% endblock %}
 
@@ -9,67 +8,93 @@
   <div class="d-flex align-items-center justify-content-between mb-4">
     <div>
       <h1 class="h3 mb-1">
-        <span class="material-symbols-outlined align-middle me-2" style="font-size:1.6rem;">menu_book</span>
-        Estudos Pessoais
+        <i class="bi bi-book me-2"></i>Estudos Pessoais
       </h1>
-      <p class="text-muted small mb-0">Área exclusiva para superadmin — ferramenta de análise bíblica aprofundada.</p>
+      <p class="text-muted small mb-0">Área exclusiva para superadmin — organizada por tópicos.</p>
     </div>
-    <a href="{% url 'admin:estudo_estudopessoal_add' %}" class="btn btn-primary btn-sm">
-      <span class="material-symbols-outlined align-middle" style="font-size:1rem;">add</span>
-      Novo Estudo
-    </a>
-  </div>
-
-  {% if estudos %}
-    <div class="row g-3">
-      {% for estudo in estudos %}
-        <div class="col-12 col-md-6 col-xl-4">
-          <div class="card h-100 shadow-sm border-0">
-            <div class="card-body">
-              <h6 class="card-title fw-semibold mb-1">
-                <a href="{% url 'estudo:estudopessoal_detalhe' estudo.pk %}" class="text-decoration-none stretched-link">
-                  {{ estudo.titulo }}
-                </a>
-              </h6>
-              <p class="text-muted small mb-2">
-                <span class="material-symbols-outlined align-middle" style="font-size:.9rem;">bookmark</span>
-                {{ estudo.referencia }}
-              </p>
-              <p class="text-muted" style="font-size:.8rem;">
-                Criado em {{ estudo.criado_em|date:"d/m/Y" }} &nbsp;·&nbsp;
-                Atualizado {{ estudo.atualizado_em|date:"d/m/Y" }}
-              </p>
-            </div>
-            <div class="card-footer bg-transparent border-top-0 pb-3 d-flex gap-2">
-              <a href="{% url 'admin:estudo_estudopessoal_exportar_txt' estudo.pk %}"
-                 class="btn btn-outline-secondary btn-sm" title="Exportar TXT">
-                📄 TXT
-              </a>
-              <a href="{% url 'admin:estudo_estudopessoal_exportar_pdf' estudo.pk %}"
-                 class="btn btn-outline-danger btn-sm" title="Exportar PDF">
-                📕 PDF
-              </a>
-              <a href="{% url 'admin:estudo_estudopessoal_exportar_docx' estudo.pk %}"
-                 class="btn btn-outline-primary btn-sm" title="Exportar DOCX">
-                📝 DOCX
-              </a>
-              <a href="{% url 'admin:estudo_estudopessoal_change' estudo.pk %}"
-                 class="btn btn-outline-warning btn-sm ms-auto" title="Editar no admin">
-                <span class="material-symbols-outlined" style="font-size:.9rem;">edit</span>
-              </a>
-            </div>
-          </div>
-        </div>
-      {% endfor %}
-    </div>
-  {% else %}
-    <div class="text-center py-5">
-      <span class="material-symbols-outlined text-muted" style="font-size:3rem;">auto_stories</span>
-      <p class="text-muted mt-2">Nenhum estudo pessoal cadastrado ainda.</p>
-      <a href="{% url 'admin:estudo_estudopessoal_add' %}" class="btn btn-primary btn-sm mt-1">
-        Criar primeiro estudo
+    <div class="d-flex gap-2">
+      <a href="{% url 'admin:estudo_topico_add' %}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-folder-plus me-1"></i> Novo Tópico
+      </a>
+      <a href="{% url 'admin:estudo_estudopessoal_add' %}" class="btn btn-primary btn-sm">
+        <i class="bi bi-plus me-1"></i> Novo Estudo
       </a>
     </div>
+  </div>
+
+  {# ── Tópicos ────────────────────────────────────────────────────────────── #}
+  {% if topicos %}
+  <div class="row g-3 mb-4">
+    {% for topico in topicos %}
+    <div class="col-12 col-md-6 col-xl-4">
+      <div class="card h-100 shadow-sm border-0">
+        <div class="card-body">
+          <h5 class="card-title fw-semibold mb-1">
+            <a href="{% url 'estudo:topico_detalhe' topico.pk %}" class="text-decoration-none stretched-link">
+              <i class="bi bi-folder2-open me-1 text-warning"></i>{{ topico.titulo }}
+            </a>
+          </h5>
+          {% if topico.descricao %}
+          <p class="card-text text-muted small mb-2">{{ topico.descricao|truncatewords:15 }}</p>
+          {% endif %}
+          <span class="badge bg-primary rounded-pill">{{ topico.estudos.count }} estudo(s)</span>
+        </div>
+        <div class="card-footer bg-transparent border-top-0 d-flex justify-content-end pb-3">
+          <a href="{% url 'admin:estudo_topico_change' topico.pk %}"
+             class="btn btn-outline-warning btn-sm" title="Editar tópico">
+            <i class="bi bi-pencil"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="text-center py-4 mb-4 rounded-3 border border-dashed">
+    <i class="bi bi-folder2-open text-muted" style="font-size:2.5rem;"></i>
+    <p class="text-muted mt-2 mb-1">Nenhum tópico criado ainda.</p>
+    <a href="{% url 'admin:estudo_topico_add' %}" class="btn btn-primary btn-sm">Criar primeiro tópico</a>
+  </div>
+  {% endif %}
+
+  {# ── Estudos sem tópico ─────────────────────────────────────────────────── #}
+  {% if estudos_sem_topico %}
+  <h2 class="h5 fw-semibold border-bottom pb-2 mb-3 text-muted">
+    <i class="bi bi-journal-x me-1"></i>Estudos sem tópico
+  </h2>
+  <div class="row g-3">
+    {% for estudo in estudos_sem_topico %}
+    <div class="col-12 col-md-6 col-xl-4">
+      <div class="card h-100 shadow-sm border-0">
+        <div class="card-body">
+          <h6 class="card-title fw-semibold mb-1">
+            <a href="{% url 'estudo:estudopessoal_detalhe' estudo.pk %}" class="text-decoration-none stretched-link">
+              {{ estudo.titulo|default:"(sem título)" }}
+            </a>
+          </h6>
+          <p class="text-muted small mb-0">
+            <i class="bi bi-bookmark me-1"></i>{{ estudo.referencia|default:"—" }}
+          </p>
+          <p class="text-muted mt-1 mb-0" style="font-size:.75rem;">
+            {{ estudo.criado_em|date:"d/m/Y" }}
+          </p>
+        </div>
+        <div class="card-footer bg-transparent border-top-0 d-flex gap-1 pb-3">
+          <a href="{% url 'admin:estudo_estudopessoal_exportar_txt' estudo.pk %}"
+             class="btn btn-outline-secondary btn-sm" title="TXT">TXT</a>
+          <a href="{% url 'admin:estudo_estudopessoal_exportar_pdf' estudo.pk %}"
+             class="btn btn-outline-danger btn-sm" title="PDF">PDF</a>
+          <a href="{% url 'admin:estudo_estudopessoal_exportar_docx' estudo.pk %}"
+             class="btn btn-outline-primary btn-sm" title="DOCX">DOCX</a>
+          <a href="{% url 'admin:estudo_estudopessoal_change' estudo.pk %}"
+             class="btn btn-outline-warning btn-sm ms-auto" title="Editar">
+            <i class="bi bi-pencil"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
   {% endif %}
 
 </div>

@@ -704,7 +704,7 @@ class GrupoAdmin(StaffAccessMixin, UnfoldModelAdmin):
 # EstudoPessoal — acesso exclusivo para superadmin
 # ─────────────────────────────────────────────────────────────────────────────
 
-from .models import EstudoPessoal, TopicoEstudo
+from .models import EstudoPessoal, Topico, TopicoEstudo
 
 
 # ── Helpers de exportação ────────────────────────────────────────────────────
@@ -944,13 +944,59 @@ def acao_exportar_markdown(modeladmin, request, queryset):
     modeladmin.message_user(request, "Selecione apenas 1 estudo por vez para exportar.", messages.WARNING)
 
 
-# ── Inline de tópicos ─────────────────────────────────────────────────────────
+# ── Inline de tópicos (sermão) ────────────────────────────────────────────────
 
 class TopicoEstudoInline(admin.TabularInline):
     model = TopicoEstudo
     extra = 1
     fields = ("ordem", "incluir", "titulo", "conteudo")
     ordering = ("ordem",)
+
+
+# ── Inline de estudos (para TopicoAdmin) ─────────────────────────────────────
+
+class EstudoPessoalInline(admin.TabularInline):
+    model = EstudoPessoal
+    extra = 0
+    fields = ("titulo", "referencia", "permissao")
+    show_change_link = True
+    ordering = ("-criado_em",)
+
+    def has_delete_permission(self, request, obj=None):
+        return request.user.is_superuser
+
+
+# ── Admin Topico ──────────────────────────────────────────────────────────────
+
+@admin.register(Topico)
+class TopicoAdmin(UnfoldModelAdmin):
+    """Pasta/categoria de Estudos Pessoais — apenas superadmin."""
+
+    list_display = ("titulo", "total_estudos", "ordem", "criado_em")
+    list_display_links = ("titulo",)
+    search_fields = ("titulo",)
+    ordering = ("ordem", "titulo")
+    inlines = [EstudoPessoalInline]
+    compressed_fields = True
+
+    @admin.display(description="Estudos")
+    def total_estudos(self, obj):
+        return obj.estudos.count()
+
+    def has_module_perms(self, request):
+        return request.user.is_superuser
+
+    def has_view_permission(self, request, obj=None):
+        return request.user.is_superuser
+
+    def has_add_permission(self, request):
+        return request.user.is_superuser
+
+    def has_change_permission(self, request, obj=None):
+        return request.user.is_superuser
+
+    def has_delete_permission(self, request, obj=None):
+        return request.user.is_superuser
 
 
 # ── Admin EstudoPessoal ───────────────────────────────────────────────────────
@@ -1009,7 +1055,7 @@ class EstudoPessoalAdmin(UnfoldModelAdmin):
 
     fieldsets = [
         ("Identificação", {
-            "fields": ("titulo", "referencia", "permissao", "texto_biblico"),
+            "fields": ("topico", "titulo", "referencia", "permissao", "texto_biblico"),
         }),
 
         # ══════════════════════════════════════════════════════════════════════
