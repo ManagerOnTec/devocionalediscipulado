@@ -20,7 +20,7 @@ from django.shortcuts import get_object_or_404, redirect
 from django.views import View
 from django.views.generic import DetailView, ListView, TemplateView
 
-from .models import Modulo, ProgressoEstudoPessoal, ProgressoTema, Tema, Trilha, EstudoPessoal
+from .models import Modulo, ProgressoTema, Tema, Trilha
 
 User = get_user_model()
 
@@ -275,46 +275,23 @@ class ModuloDetalheView(DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         modulo = self.object
-        tipo_trilha = modulo.trilha.tipo
-        context["tipo_trilha"] = tipo_trilha
+        context["tipo_trilha"] = modulo.trilha.tipo
 
-        if tipo_trilha == Trilha.TipoChoices.ESTUDO_PESSOAL:
-            # Show EstudoPessoais instead of Temas
-            estudos_qs = modulo.estudos_pessoais.filter(is_active=True)
-            user = self.request.user
-            if not user.is_superuser:
-                from django.db.models import Q
-                estudos_qs = estudos_qs.filter(
-                    Q(acesso=Trilha.AcessoChoices.SOMENTE_PROPRIETARIO, criado_por=user) |
-                    ~Q(acesso=Trilha.AcessoChoices.SOMENTE_PROPRIETARIO)
+        if self.request.user.is_authenticated:
+            concluidos_ids = set(
+                ProgressoTema.objects.filter(usuario=self.request.user).values_list(
+                    "tema_id", flat=True
                 )
-            if user.is_authenticated:
-                concluidos_ids = set(
-                    ProgressoEstudoPessoal.objects.filter(usuario=user)
-                    .values_list("estudo_id", flat=True)
-                )
-            else:
-                concluidos_ids = set()
-            context["estudos_pessoais"] = [
-                {"obj": ep, "concluido": ep.id in concluidos_ids}
-                for ep in estudos_qs.order_by("criado_em")
-            ]
+            )
         else:
-            if self.request.user.is_authenticated:
-                concluidos_ids = set(
-                    ProgressoTema.objects.filter(usuario=self.request.user).values_list(
-                        "tema_id", flat=True
-                    )
-                )
-            else:
-                concluidos_ids = set()
-            temas_progresso = []
-            for tema in modulo.temas.order_by("ordem"):
-                temas_progresso.append({
-                    "obj": tema,
-                    "concluido": tema.id in concluidos_ids,
-                })
-            context["temas_progresso"] = temas_progresso
+            concluidos_ids = set()
+        temas_progresso = []
+        for tema in modulo.temas.order_by("ordem"):
+            temas_progresso.append({
+                "obj": tema,
+                "concluido": tema.id in concluidos_ids,
+            })
+        context["temas_progresso"] = temas_progresso
         return context
 
 
@@ -407,80 +384,3 @@ class MeuProgressoView(LoginRequiredMixin, TemplateView):
         return context
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# EstudoPessoal — helpers de permissão
-# ─────────────────────────────────────────────────────────────────────────────
-
-def _verificar_acesso_estudo(request, estudo):
-    """
-    Verifica se a requisição tem permissão para acessar um EstudoPessoal.
-    SOMENTE_PROPRIETARIO: apenas o criado_por (ou superadmin) pode acessar.
-    """
-    if request.user.is_superuser:
-        return True
-    acesso = estudo.acesso or Trilha.AcessoChoices.SOMENTE_PROPRIETARIO
-    if acesso == Trilha.AcessoChoices.SOMENTE_PROPRIETARIO:
-        return request.user.is_authenticated and estudo.criado_por == request.user
-    if acesso == Trilha.AcessoChoices.PERMISSAO_ESPECIFICA:
-        return request.user.is_authenticated and request.user.has_perm("estudo.ver_estudopessoal")
-    if acesso == Trilha.AcessoChoices.LOGIN_OBRIGATORIO:
-        return request.user.is_authenticated
-    return True  # PUBLICO
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# EstudoPessoal — views
-# ─────────────────────────────────────────────────────────────────────────────
-
-class EstudoPessoalListView(LoginRequiredMixin, ListView):
-    """Lista de Estudos Pessoais do usuário logado (acessos que ele pode ver)."""
-
-    model = EstudoPessoal
-    template_name = "estudo/estudopessoal_lista.html"
-    context_object_name = "estudos"
-    ordering = ["-criado_em"]
-
-    def dispatch(self, request, *args, **kwargs):
-        if not request.user.is_authenticated:
-            return redirect_to_login(request.get_full_path())
-        return super().dispatch(request, *args, **kwargs)
-
-    def get_queryset(self):
-        user = self.request.user
-        from django.db.models import Q
-        if user.is_superuser:
-            return EstudoPessoal.objects.filter(is_active=True).order_by("-criado_em")
-        # Show studies that belong to the user OR are public/login
-        return EstudoPessoal.objects.filter(is_active=True).filter(
-            Q(acesso=Trilha.AcessoChoices.SOMENTE_PROPRIETARIO, criado_por=user) |
-            Q(acesso=Trilha.AcessoChoices.LOGIN_OBRIGATORIO) |
-            Q(acesso=Trilha.AcessoChoices.PUBLICO)
-        ).order_by("-criado_em")
-
-
-
-class EstudoPessoalDetalheView(LoginRequiredMixin, DetailView):
-    """Detalhe completo de um EstudoPessoal com controle de acesso por acesso field."""
-
-    model = EstudoPessoal
-    template_name = "estudo/estudopessoal_detalhe.html"
-    context_object_name = "estudo"
-
-    def get_queryset(self):
-        return EstudoPessoal.objects.select_related("modulo__trilha", "criado_por")
-
-    def dispatch(self, request, *args, **kwargs):
-        obj = get_object_or_404(
-            EstudoPessoal.objects.select_related("modulo__trilha", "criado_por"),
-            pk=kwargs["pk"],
-        )
-        if not _verificar_acesso_estudo(request, obj):
-            if not request.user.is_authenticated:
-                return redirect_to_login(request.get_full_path())
-            raise PermissionDenied
-        return super().dispatch(request, *args, **kwargs)
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["topicos"] = self.object.topicos.filter(incluir=True).order_by("ordem")
-        return context

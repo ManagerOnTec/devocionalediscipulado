@@ -54,45 +54,6 @@
         {% endif %}
     </header>
 
-    {# ── Lista de temas OU estudos pessoais (baseado no tipo da trilha) ── #}
-    {% if tipo_trilha == "ESTUDO_PESSOAL" %}
-    <section aria-labelledby="ep-heading">
-        <h2 id="ep-heading" class="h5 fw-semibold mb-3">
-            <i class="bi bi-journal-richtext me-2 text-warning" aria-hidden="true"></i>Estudos Pessoais deste módulo
-        </h2>
-        {% if estudos_pessoais %}
-        <div class="list-group shadow-sm">
-            {% for item in estudos_pessoais %}
-            <a
-                href="/estudo/estudos-pessoais/{{ item.obj.pk }}/"
-                class="list-group-item list-group-item-action p-3 d-flex justify-content-between align-items-center"
-            >
-                <div>
-                    <span class="fw-semibold">
-                        <span class="text-warning me-2" aria-hidden="true">{{ forloop.counter }}.</span>{{ item.obj.titulo|default:"(sem título)" }}
-                    </span>
-                    {% if item.obj.referencia %}
-                    <span class="text-muted small ms-2">
-                        <i class="bi bi-bookmark me-1" aria-hidden="true"></i>{{ item.obj.referencia }}
-                    </span>
-                    {% endif %}
-                </div>
-                {% if item.concluido %}
-                <span class="badge text-bg-success flex-shrink-0 ms-2">
-                    <i class="bi bi-check-circle-fill me-1" aria-hidden="true"></i>Concluído
-                </span>
-                {% else %}
-                <i class="bi bi-chevron-right text-muted flex-shrink-0" aria-hidden="true"></i>
-                {% endif %}
-            </a>
-            {% endfor %}
-        </div>
-        {% else %}
-        {% include "components/empty_state.html" with icon="bi-journal-x" titulo="Nenhum estudo disponível" mensagem="Não há estudos pessoais neste módulo." %}
-        {% endif %}
-    </section>
-
-    {% else %}
     {# ── Lista de temas ── #}
     <section aria-labelledby="temas-heading">
         <h2 id="temas-heading" class="h5 fw-semibold mb-3">
@@ -135,7 +96,6 @@
         {% endif %}
 
     </section>
-    {% endif %}{# fim tipo_trilha #}
 
 </article>
 {% endblock %}

@@ -426,3 +426,347 @@ class ProgressoTema(TimeStampedModel):
 
 
 
+
+# ─────────────────────────────────────────────────────────────────────────────
+# EstudoPessoal  (visível apenas para superadmin)
+# ─────────────────────────────────────────────────────────────────────────────
+
+class EstudoPessoal(BaseModel):
+    """
+    Ferramenta de estudo bíblico pessoal.
+    Pode estar associado a um Módulo (dentro da hierarquia Trilha → Módulo)
+    ou ser um estudo avulso (modulo=None).
+    O acesso SOMENTE_PROPRIETARIO restringe a visualização ao criador (criado_por).
+    """
+
+    # ── Identificação ────────────────────────────────────────────────────────
+
+    class TipoChoices(models.TextChoices):
+        DEVOCIONAL    = "DEVOCIONAL",    "Devocional"
+        DISCIPULADO   = "DISCIPULADO",   "Discipulado"
+        ESTUDO_PESSOAL = "ESTUDO_PESSOAL", "Estudo Pessoal"
+
+    modulo = models.ForeignKey(
+        "Modulo",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="estudos_pessoais",
+        verbose_name="Módulo",
+        help_text="Módulo ao qual este estudo pertence (quando inserido em uma Trilha).",
+    )
+    tipo = models.CharField(
+        max_length=20,
+        choices=TipoChoices.choices,
+        default=TipoChoices.ESTUDO_PESSOAL,
+        verbose_name="Tipo",
+        help_text="Classificação do estudo.",
+    )
+    titulo = models.CharField(
+        max_length=300,
+        blank=True, null=True,
+        verbose_name="Título do Estudo",
+        help_text="Ex.: 'Estudo de João 3:16 — O Amor de Deus'.",
+    )
+    referencia = models.CharField(
+        max_length=100,
+        blank=True, null=True,
+        verbose_name="Referência Bíblica",
+        help_text="Ex.: João 3:16 · Romanos 8:1-11 · Salmo 23.",
+    )
+
+    # ── Texto e contexto ─────────────────────────────────────────────────────
+    texto_biblico = models.TextField(
+        blank=True, null=True,
+        verbose_name="Texto Bíblico",
+        help_text="Cole aqui o(s) versículo(s) que serão estudados.",
+    )
+
+    # incluir no admin a sessao de contexto imediato / para contexto anterior e posterior
+    contexto_anterior = models.TextField(
+        blank=True, null=True,
+        verbose_name="Contexto Anterior",
+        help_text="Contexto Imediato e anterior ao versículo citado.",
+    )
+    contexto_posterior = models.TextField(
+        blank=True, null=True,
+        verbose_name="Contexto Posterior",
+        help_text="Contexto Imediato e posterior ao versículo citado.",
+    )
+
+    contexto_geral_escrituras = models.TextField(
+        blank=True, null=True,
+        verbose_name="Contexto Geral das Escrituras",
+        help_text="Como este texto se encaixa no contexto geral da Bíblia? Ex.: Capítulo inteiro, livro, etc.",
+    )
+
+
+    versiculos_relacionados = models.TextField(
+        blank=True, null=True,
+        verbose_name="Versículos Relacionados",
+        help_text="Concordância bíblica: liste referências que tratam do mesmo tema ou palavra-chave.",
+    )
+
+
+
+    # ── Palavras-chave ────────────────────────────────────────────────────────
+    palavra_central = models.CharField(
+        max_length=200,
+        blank=True, null=True,
+        verbose_name="Palavra Central",
+        help_text="A palavra mais importante do texto; eixo do estudo.",
+    )
+
+    # ── Traduções ─────────────────────────────────────────────────────────────
+    traducoes = models.TextField(
+        blank=True, null=True,
+        verbose_name="Tradução / Hebraico / Grego / Latim / Inglês",
+        help_text="Sentido do termo no hebraico original (para textos do AT). Use Strong's ou léxico BDB.",
+    )
+    observacoes_portugues = models.TextField(
+        blank=True, null=True,
+        verbose_name="Observações para o Português",
+        help_text="Nuances da tradução para o português: diferenças entre ARC, ARA, NVI, NVT, etc.",
+    )
+
+
+    uso_antigo_novo_testamento = models.TextField(
+        blank=True, null=True,
+        verbose_name="Uso no Antigo e Novo Testamento",
+        help_text="Como este texto/palavra/tema é tratado no AT e NT? Há prefigurações, tipos ou citações?",
+    )
+
+    # ── Teologia e contexto histórico ────────────────────────────────────────
+    onde_esta_cristo = models.TextField(
+        blank=True, null=True,
+        verbose_name="Onde Está Cristo",
+        help_text="Leitura cristológica do texto: como ele aponta para Cristo (AT) ou revela Cristo (NT)?",
+    )
+
+
+    # ── Perguntas hermenêuticas ──────────────────────────────────────────────
+    quem_fala = models.CharField(
+        max_length=300,
+        blank=True, null=True,
+        verbose_name="AUTOR/Quem está falando?",
+        help_text="Identifique o locutor: Deus, um profeta, o apóstolo, um personagem da narrativa.",
+    )
+    personagens = models.TextField(
+        blank=True, null=True,
+        verbose_name="Personagens",
+        help_text="Liste os personagens presentes no texto: protagonistas, antagonistas e figuras secundárias.",
+    )
+    para_quem = models.CharField(
+        max_length=300,
+        blank=True, null=True,
+        verbose_name="Público Original/Para quem?",
+        help_text="Identifique o(s) destinatário(s) original(is).",
+    )
+    sobre_o_que = models.TextField(
+        blank=True, null=True,
+        verbose_name="Sobre o quê?",
+        help_text="Qual é o assunto central que o texto aborda?",
+    )
+    qual_objetivo = models.TextField(
+        blank=True, null=True,
+        verbose_name="Qual o objetivo?",
+        help_text="O texto visa ensinar, corrigir, consolar, exortar, profetizar? Qual a finalidade?",
+    )
+
+
+    o_que_exige_de_mim = models.TextField(
+        blank=True, null=True,
+        verbose_name="O que exige de mim?",
+        help_text="Qual a demanda prática, espiritual ou ética que este texto impõe ao leitor?",
+    )
+
+    # ── Controle de inclusão por grupo ───────────────────────────────────────
+    incluir_hermeneutica = models.BooleanField(
+        default=True,
+        verbose_name="Incluir Hermenêutica",
+        help_text="Marque para incluir toda a seção de Hermenêutica na exportação.",
+    )
+    incluir_exegese = models.BooleanField(
+        default=True,
+        verbose_name="Incluir Exegese",
+        help_text="Marque para incluir toda a seção de Exegese na exportação.",
+    )
+
+    # ── Desenvolvimento — seções opcionais ───────────────────────────────────
+    incluir_introducao = models.BooleanField(
+        default=True,
+        verbose_name="Incluir Introdução",
+        help_text="Marque para incluir esta seção na exportação e no template.",
+    )
+    introducao = models.TextField(
+        blank=True, null=True,
+        verbose_name="Introdução",
+        help_text="Contextualize o tema para o ouvinte/leitor: gancho, problema, relevância.",
+    )
+
+    incluir_explicacao = models.BooleanField(
+        default=True,
+        verbose_name="Incluir Explicação",
+        help_text="Marque para incluir esta seção na exportação e no template.",
+    )
+    explicacao = models.TextField(
+        blank=True, null=True,
+        verbose_name="Explicação",
+        help_text="O que o texto diz? Exegese e exposição versículo a versículo.",
+    )
+
+    incluir_aplicacao = models.BooleanField(
+        default=True,
+        verbose_name="Incluir Aplicação",
+        help_text="Marque para incluir esta seção na exportação e no template.",
+    )
+    aplicacao = models.TextField(
+        blank=True, null=True,
+        verbose_name="Aplicação",
+        help_text="Como este texto deve transformar a vida do ouvinte? Exemplos concretos.",
+    )
+
+    incluir_conclusao = models.BooleanField(
+        default=True,
+        verbose_name="Incluir Conclusão",
+        help_text="Marque para incluir esta seção na exportação e no template.",
+    )
+    conclusao = models.TextField(
+        blank=True, null=True,
+        verbose_name="Conclusão",
+        help_text="Fechamento do estudo: síntese, chamada à ação ou convite.",
+    )
+
+    incluir_oracao = models.BooleanField(
+        default=True,
+        verbose_name="Incluir Oração",
+        help_text="Marque para incluir esta seção na exportação e no template.",
+    )
+    oracao = models.TextField(
+        blank=True, null=True,
+        verbose_name="Oração",
+        help_text="Sugestão de oração para encerrar o estudo ou o culto.",
+    )
+
+    # ── Controle de acesso ───────────────────────────────────────────────────
+
+    acesso = models.CharField(
+        max_length=30,
+        choices=Trilha.AcessoChoices.choices,
+        default=Trilha.AcessoChoices.SOMENTE_PROPRIETARIO,
+        verbose_name="Acesso",
+        help_text=(
+            "SOMENTE_PROPRIETARIO = apenas o criador (criado_por) pode visualizar. "
+            "LOGIN_OBRIGATORIO = qualquer usuário logado. PUBLICO = todos."
+        ),
+    )
+
+    class Meta(BaseModel.Meta):
+        verbose_name = "Estudo Pessoal"
+        verbose_name_plural = "Estudos Pessoais"
+        ordering = ["-criado_em"]
+        permissions = [
+            ("ver_estudopessoal", "Pode visualizar estudos pessoais"),
+            ("ver_hermeneutica_estudopessoal", "Pode ver seção Hermenêutica"),
+            ("ver_exegese_estudopessoal", "Pode ver seção Exegese"),
+            ("ver_homiletica_estudopessoal", "Pode ver seção Homilética"),
+            ("ver_topicos_estudopessoal", "Pode ver tópicos do estudo"),
+            ("exportar_estudopessoal", "Pode exportar estudos pessoais"),
+        ]
+
+    def __str__(self):
+        ref = self.referencia or "(sem referência)"
+        titulo = self.titulo or "(sem título)"
+        return f"{ref} — {titulo}"
+
+
+class TopicoEstudo(models.Model):
+    """
+    Tópico/ponto de pregação dentro de um EstudoPessoal.
+    Quantidade variável — adicionados via Inline no admin.
+    """
+
+    estudo = models.ForeignKey(
+        EstudoPessoal,
+        on_delete=models.CASCADE,
+        related_name="topicos",
+        verbose_name="Estudo",
+    )
+    incluir = models.BooleanField(
+        default=True,
+        verbose_name="Incluir",
+        help_text="Desmarque para ocultar este tópico na exportação e no template.",
+    )
+    titulo = models.CharField(
+        max_length=300,
+        verbose_name="Título do Tópico",
+        help_text="Ex.: 'A soberania de Deus na criação'.",
+    )
+    conteudo = models.TextField(
+        blank=True,
+        verbose_name="Conteúdo",
+        help_text="Desenvolvimento do tópico: pontos de apoio, versículos, ilustrações.",
+    )
+    ordem = models.PositiveIntegerField(
+        default=0,
+        verbose_name="Ordem",
+        help_text="Define a sequência de apresentação dos tópicos.",
+    )
+
+    class Meta:
+        verbose_name = "Tópico"
+        verbose_name_plural = "Tópicos"
+        ordering = ["ordem"]
+
+    def __str__(self):
+        return f"[{self.ordem}] {self.titulo}"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# ProgressoEstudoPessoal
+# ─────────────────────────────────────────────────────────────────────────────
+
+class ProgressoEstudoPessoal(TimeStampedModel):
+    """Registra a conclusão de um EstudoPessoal por um usuário.
+
+    Pode ser marcado pelo próprio aluno ou por um professor (marcado_por).
+    """
+
+    usuario = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="progressos_estudo_pessoal",
+        verbose_name="Usuário",
+    )
+    estudo = models.ForeignKey(
+        "EstudoPessoal",
+        on_delete=models.CASCADE,
+        related_name="progressos",
+        verbose_name="Estudo Pessoal",
+    )
+    data_conclusao = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Data de Conclusão",
+    )
+    marcado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="estudos_pessoais_marcados_como_professor",
+        verbose_name="Marcado por (Professor)",
+        help_text="Professor que registrou esta conclusão. Null = registrado pelo próprio aluno.",
+    )
+
+    class Meta:
+        verbose_name = "Progresso de Estudo Pessoal"
+        verbose_name_plural = "Progressos de Estudos Pessoais"
+        unique_together = [("usuario", "estudo")]
+        ordering = ["-criado_em"]
+        indexes = [
+            models.Index(fields=["usuario", "estudo"]),
+            models.Index(fields=["usuario"]),
+        ]
+
+    def __str__(self):
+        return f"{self.usuario} → {self.estudo}"
