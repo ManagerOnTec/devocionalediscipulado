@@ -22,7 +22,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 
 from .importers import agrupar_temas, parsear_docx
-from .models import Modulo, ProgressoTema, Tema, Trilha
+from .models import EstudoPessoal, Modulo, ProgressoEstudoPessoal, ProgressoTema, Tema, Trilha, TopicoEstudo
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -117,6 +117,14 @@ class TrilhaAdmin(BaseModelAdmin):
                     "Adicione os grupos que poderão acessar esta trilha. "
                     "Lembre-se de atribuir o grupo ao usuário no cadastro do usuário."
                 ),
+            },
+        ),
+        (
+            "Professores",
+            {
+                "fields": ("professores",),
+                "description": "Usuários staff que podem marcar presença dos alunos nesta trilha.",
+                "classes": ("collapse",),
             },
         ),
     )
@@ -333,9 +341,17 @@ class ModuloAdmin(BaseModelAdmin):
             },
         ),
         (
-            "Mídia e Ordenação",
+            "Mídia, Ordenação e Acesso",
             {
                 "fields": ("imagem_capa", "ordem", "acesso"),
+            },
+        ),
+        (
+            "Professores",
+            {
+                "fields": ("professores",),
+                "description": "Usuários staff que podem marcar presença dos alunos neste módulo.",
+                "classes": ("collapse",),
             },
         ),
     )
@@ -433,6 +449,14 @@ class TemaAdmin(BaseModelAdmin):
                 "classes": ("collapse",),
             },
         ),
+        (
+            "Professores",
+            {
+                "fields": ("professores",),
+                "description": "Usuários staff que podem marcar presença dos alunos neste tema.",
+                "classes": ("collapse",),
+            },
+        ),
     )
 
     def get_prepopulated_fields(self, request, obj=None):
@@ -468,7 +492,7 @@ class ProgressoTemaAdmin(StaffAccessMixin, UnfoldModelAdmin):
     list_filter = ("tema__modulo__trilha", "tema__modulo")
     search_fields = ("usuario__email", "tema__titulo", "tema__modulo__titulo", "tema__modulo__trilha__titulo")
     ordering = ("usuario__nome_completo", "tema__modulo__trilha__titulo", "tema__modulo__titulo")
-    readonly_fields = ("criado_em", "atualizado_em", "data_conclusao")
+    readonly_fields = ("criado_em", "atualizado_em", "data_conclusao", "marcado_por")
 
     def _qs_usuarios_visiveis(self, request):
         """
@@ -643,6 +667,44 @@ class ProgressoTemaAdmin(StaffAccessMixin, UnfoldModelAdmin):
         return request.user.is_superuser
 
 
+
+# ─────────────────────────────────────────────────────────────────────────────
+# ProgressoEstudoPessoal
+# ─────────────────────────────────────────────────────────────────────────────
+
+@admin.register(ProgressoEstudoPessoal)
+class ProgressoEstudoPessoalAdmin(StaffAccessMixin, UnfoldModelAdmin):
+    """Progresso dos alunos em EstudoPessoais — professores podem registrar conclusões."""
+
+    list_display = ("usuario", "estudo_col", "data_conclusao", "marcado_por")
+    list_filter = ("marcado_por",)
+    search_fields = ("usuario__email", "estudo__titulo", "estudo__referencia")
+    ordering = ("-data_conclusao",)
+    readonly_fields = ("criado_em", "atualizado_em", "data_conclusao")
+    autocomplete_fields = ("usuario", "estudo")
+
+    @admin.display(description="Estudo", ordering="estudo__titulo")
+    def estudo_col(self, obj):
+        url = reverse("admin:estudo_estudopessoal_change", args=[obj.estudo.pk])
+        return format_html('<a href="{}">{}</a>', url, str(obj.estudo))
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request).select_related("usuario", "estudo", "marcado_por")
+        if request.user.is_superuser or request.user.is_staff:
+            return qs
+        return qs.filter(usuario=request.user)
+
+    def has_delete_permission(self, request, obj=None):
+        return request.user.is_superuser
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        User = get_user_model()
+        if db_field.name == "usuario":
+            kwargs["queryset"] = User.objects.filter(is_active=True).order_by("nome_completo")
+        if db_field.name == "marcado_por":
+            kwargs["queryset"] = User.objects.filter(is_staff=True, is_active=True).order_by("nome_completo")
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Group — admin customizado (sem permissões Django; mostra trilhas vinculadas)
 # ─────────────────────────────────────────────────────────────────────────────
@@ -703,8 +765,6 @@ class GrupoAdmin(StaffAccessMixin, UnfoldModelAdmin):
 # ─────────────────────────────────────────────────────────────────────────────
 # EstudoPessoal — acesso exclusivo para superadmin
 # ─────────────────────────────────────────────────────────────────────────────
-
-from .models import EstudoPessoal, Topico, TopicoEstudo
 
 
 # ── Helpers de exportação ────────────────────────────────────────────────────
@@ -953,69 +1013,6 @@ class TopicoEstudoInline(admin.TabularInline):
     ordering = ("ordem",)
 
 
-# ── Inline de estudos (para TopicoAdmin) ─────────────────────────────────────
-
-class EstudoPessoalInline(admin.TabularInline):
-    model = EstudoPessoal
-    extra = 0
-    fields = ("titulo", "referencia", "permissao")
-    show_change_link = True
-    ordering = ("-criado_em",)
-
-    def has_delete_permission(self, request, obj=None):
-        return request.user.is_superuser
-
-
-# ── Admin Topico ──────────────────────────────────────────────────────────────
-
-@admin.register(Topico)
-class TopicoAdmin(UnfoldModelAdmin):
-    """Pasta/categoria de Estudos Pessoais — apenas superadmin."""
-
-    list_display = ("titulo", "permissao", "total_estudos", "ordem", "criado_em")
-    list_display_links = ("titulo",)
-    search_fields = ("titulo",)
-    ordering = ("ordem", "titulo")
-    inlines = [EstudoPessoalInline]
-    compressed_fields = True
-    warn_unsaved_changes = True
-
-    fieldsets = [
-        ("Identificação", {
-            "fields": ("titulo", "descricao", "imagem_capa", "permissao", "ordem"),
-            "description": (
-                "A permissão definida aqui é superior e se aplica a todos os Estudos Pessoais deste tópico. "
-                "Se o tópico for 'Login Obrigatório', todos os estudos dentro dele exigem login, "
-                "independentemente da permissão individual de cada estudo."
-            ),
-        }),
-        ("Auditoria", {
-            "fields": ("criado_em", "atualizado_em"),
-            "classes": ("collapse",),
-        }),
-    ]
-
-    readonly_fields = ("criado_em", "atualizado_em")
-
-    @admin.display(description="Estudos")
-    def total_estudos(self, obj):
-        return obj.estudos.count()
-
-    def has_module_perms(self, request):
-        return request.user.is_superuser
-
-    def has_view_permission(self, request, obj=None):
-        return request.user.is_superuser
-
-    def has_add_permission(self, request):
-        return request.user.is_superuser
-
-    def has_change_permission(self, request, obj=None):
-        return request.user.is_superuser
-
-    def has_delete_permission(self, request, obj=None):
-        return request.user.is_superuser
-
 
 # ── Admin EstudoPessoal ───────────────────────────────────────────────────────
 
@@ -1025,10 +1022,10 @@ class EstudoPessoalAdmin(UnfoldModelAdmin):
 
     list_display = (
         "titulo",
-        "topico_link",
         "referencia",
-        "permissao",
-        "permissao_efetiva_display",
+        "tipo",
+        "acesso",
+        "modulo_col",
         "badge_hermeneutica",
         "badge_exegese",
         "badge_homiletica",
@@ -1036,56 +1033,23 @@ class EstudoPessoalAdmin(UnfoldModelAdmin):
         "atualizado_em",
     )
     list_display_links = ("titulo",)
-    list_filter = ("topico", "permissao")
-    search_fields = ("titulo", "referencia", "topico__titulo")
+    list_filter = ("tipo", "acesso", "is_active")
+    search_fields = ("titulo", "referencia", "modulo__titulo", "modulo__trilha__titulo")
     ordering = ("-criado_em",)
     readonly_fields = ("criado_em", "atualizado_em")
     inlines = [TopicoEstudoInline]
-    autocomplete_fields = ("topico",)
+    autocomplete_fields = ("modulo",)
     actions = [acao_exportar_txt, acao_exportar_pdf, acao_exportar_docx, acao_exportar_markdown]
 
     class Media:
         css = {"all": ("css/admin_overrides.css",)}
 
-    # ── Tópico com link ───────────────────────────────────────────────────
-
-    @admin.display(description="Tópico", ordering="topico__titulo")
-    def topico_link(self, obj):
-        """Exibe o tópico com link para sua página de edição."""
-        if not obj.topico_id:
-            return "—"
-        url = reverse("admin:estudo_topico_change", args=[obj.topico_id])
-        return format_html('<a href="{}">{}</a>', url, obj.topico.titulo)
-
-    # ── Permissão efetiva (tópico prevalece quando mais restritiva) ───────
-
-    _PERM_PRIORIDADE = {
-        "SOMENTE_SUPERADMIN": 3,
-        "LOGIN_OBRIGATORIO": 2,
-        "PUBLICO": 1,
-    }
-    _PERM_LABELS = {
-        "SOMENTE_SUPERADMIN": ("🔒 Só superadmin", "#dc3545"),
-        "LOGIN_OBRIGATORIO": ("🔐 Login obrig.", "#fd7e14"),
-        "PUBLICO": ("🌐 Público", "#198754"),
-    }
-
-    @admin.display(description="Permissão efetiva")
-    def permissao_efetiva_display(self, obj):
-        """Mostra a permissão real considerando que o tópico pode substituir a do estudo."""
-        ep = obj.permissao or "SOMENTE_SUPERADMIN"
-        efetiva = ep
-        sobreposta = False
-        if obj.topico_id:
-            tp = obj.topico.permissao or "SOMENTE_SUPERADMIN"
-            if self._PERM_PRIORIDADE.get(tp, 3) >= self._PERM_PRIORIDADE.get(ep, 3):
-                efetiva = tp
-                sobreposta = tp != ep
-        label, cor = self._PERM_LABELS.get(efetiva, (efetiva, "#6c757d"))
-        badge = f'<span style="color:{cor};font-weight:600;">{label}</span>'
-        if sobreposta:
-            badge += ' <span style="color:#6c757d;font-size:.75rem;" title="Permissão herdada do tópico">(tópico)</span>'
-        return format_html(badge)
+    @admin.display(description="Módulo", ordering="modulo__titulo")
+    def modulo_col(self, obj):
+        if obj.modulo:
+            url = reverse("admin:estudo_modulo_change", args=[obj.modulo.pk])
+            return format_html('<a href="{}">{}</a>', url, str(obj.modulo))
+        return "—"
 
     # ── Badges de grupo na listagem ───────────────────────────────────────
 
@@ -1120,7 +1084,7 @@ class EstudoPessoalAdmin(UnfoldModelAdmin):
 
     fieldsets = [
         ("Identificação", {
-            "fields": ("topico", "titulo", "referencia", "permissao", "texto_biblico"),
+            "fields": ("modulo", "tipo", "titulo", "referencia", "acesso", "texto_biblico"),
         }),
 
         # ══════════════════════════════════════════════════════════════════════
@@ -1223,7 +1187,7 @@ class EstudoPessoalAdmin(UnfoldModelAdmin):
         # AUDITORIA
         # ══════════════════════════════════════════════════════════════════════
         ("Auditoria", {
-            "fields": ("criado_em", "atualizado_em"),
+            "fields": ("criado_por", "atualizado_por", "criado_em", "atualizado_em"),
             "description": "Informações sobre criação e atualização do registro.",
             "classes": ("collapse",),
         }),

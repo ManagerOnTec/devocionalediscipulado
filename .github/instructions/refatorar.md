@@ -1,12 +1,26 @@
-# Refatorar topico para mnodelo estudopessoal e template lista e detalhe
-
--logado com superadmin nao apareceu no template principal o estudopessoal 
-
-- ao acessar a url elementos html desfigurados para voce corrigir
+# Refatorar estudopessoal
 
 
-- o botao voltar na lista nao funcionou tambem, pois a lista nao existe, faça o necessario
+- o modelo estudopessoal deve ter a mesma estrutura de estudo, sendo ele tipochoice igual as opcoes devocional, discipulado, estudopessoal
 
-- teste o template de estudos pessoais clicando em todos os botoes, - verifique para com as permissoes ele seja exibido o card, 
+-ex:  class TipoChoices(models.TextChoices):
+        DEVOCIONAL   = "DEVOCIONAL",   "Devocional"
+        DISCIPULADO  = "DISCIPULADO",  "Discipulado"
+        ESTUDO_PESOSAL = ESTUDOPESSOAL, ESTUDOPESSOAL
 
-- pode ser um card model de estudos pessoais por topico similar a trilha, mas se chame topico, este topico pode ser criado e renomeado para ter varios topicos e dentro de cada topico pode ter varios estudospessoais.
+- ELE DEVE TER TRILHA E MODULO E QUANDO FOR DO TIPO ESTUDO PESSOAL AO INVES DE HABILITAR TEMA HABILITAR ESTUDOPESSOAL.
+
+- SEGUIR PERMISSOES IGUAL DA TRILHA, E ADICINAR NA TRILHA O CHOICE DE ESTUDOPESSOAL 
+
+
+- ADICIONAR PERMISSOES NO MODULO IGUAL DA TRILHA COM PUBLICO, LOGIN, PERMISSAO ESPECIFICA, SOMENTE USUARIO (TRILHA E MODULO IGUAIS)
+
+- QUANDO TRILHA E MODULO NAO FOREM PUBLICO SE USUARIO LOGADO NAO TIVER A PERMISSAO NAO DEVE APARECER O CARD
+
+
+- retirar o card do estudopessoal do index e adicionar no de estudo por tipochoice
+
+- ADICIONAR PROFESSOR POR TRILHA, POR MODULO E TEMA COM OBJETIVO QUE ELE POSSA MARCAR MANUALMENTE OU POR ACOES DO ADMIN A PRESENCA DOS ALUNOS EM DETERMINADO TEMA OU CONCLUSAO DO MODULO, ESTE PROFESSOR PODE SER VARIOS E TODOS LISTADOS PODEM DAR A PRESENCA NO TEMA E CONCLUSAO POR MODULO E TRILHA DO ALUNO, PARA ESTAR APTO A SER PROFESSOR DEVE TER STATUS DE ADMIN TRUE, ELE SÓ NAO PODE ALTERAR COISAS DE QUANDO TIVER ESTUDOPESSOAL CHOICE DO PROPRIETARIO.
+
+
+

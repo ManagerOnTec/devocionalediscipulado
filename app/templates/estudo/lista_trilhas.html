@@ -49,8 +49,10 @@
     <h2 id="tipo-{{ forloop.counter }}" class="h5 fw-semibold text-body-secondary border-bottom pb-2 mb-3">
         {% if grupo.grouper == "Devocional" %}
         <i class="bi bi-book me-2 text-primary" aria-hidden="true"></i>
-        {% else %}
+        {% elif grupo.grouper == "Discipulado" %}
         <i class="bi bi-people me-2 text-success" aria-hidden="true"></i>
+        {% else %}
+        <i class="bi bi-journal-richtext me-2 text-warning" aria-hidden="true"></i>
         {% endif %}
         {{ grupo.grouper }}
     </h2>
@@ -78,8 +80,10 @@
                 >
                     {% if trilha.tipo == "DEVOCIONAL" %}
                     <i class="bi bi-book display-4 text-primary"></i>
-                    {% else %}
+                    {% elif trilha.tipo == "DISCIPULADO" %}
                     <i class="bi bi-people display-4 text-success"></i>
+                    {% else %}
+                    <i class="bi bi-journal-richtext display-4 text-warning"></i>
                     {% endif %}
                 </div>
                 {% endif %}
@@ -87,7 +91,7 @@
 
                 <div class="card-body d-flex flex-column">
                     {# ── Badge de tipo ── #}
-                    <span class="badge {% if trilha.tipo == 'DEVOCIONAL' %}text-bg-primary{% else %}text-bg-success{% endif %} mb-2 align-self-start">
+                    <span class="badge {% if trilha.tipo == 'DEVOCIONAL' %}text-bg-primary{% elif trilha.tipo == 'DISCIPULADO' %}text-bg-success{% else %}text-bg-warning text-dark{% endif %} mb-2 align-self-start">
                         {{ trilha.get_tipo_display }}
                     </span>
 

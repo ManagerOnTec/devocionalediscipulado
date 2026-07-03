@@ -381,12 +381,6 @@ UNFOLD = {
                         ),
                     },
                     {
-                        "title": "Tópicos de Estudos Pessoais",
-                        "icon": "folder_open",
-                        "link": reverse_lazy("admin:estudo_topico_changelist"),
-                        "permission": lambda request: request.user.is_superuser,
-                    },
-                    {
                         "title": "Estudos Pessoais",
                         "icon": "auto_stories",
                         "link": reverse_lazy("admin:estudo_estudopessoal_changelist"),

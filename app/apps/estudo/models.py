@@ -27,8 +27,9 @@ class Trilha(BaseModel):
     """
 
     class TipoChoices(models.TextChoices):
-        DEVOCIONAL   = "DEVOCIONAL",   "Devocional"
-        DISCIPULADO  = "DISCIPULADO",  "Discipulado"
+        DEVOCIONAL    = "DEVOCIONAL",    "Devocional"
+        DISCIPULADO   = "DISCIPULADO",   "Discipulado"
+        ESTUDO_PESSOAL = "ESTUDO_PESSOAL", "Estudo Pessoal"
 
     class StatusChoices(models.TextChoices):
         RASCUNHO  = "RASCUNHO",  "Rascunho"
@@ -88,6 +89,15 @@ class Trilha(BaseModel):
         default=0,
         db_index=True,
         verbose_name="Ordem",
+    )
+
+    professores = models.ManyToManyField(
+        settings.AUTH_USER_MODEL,
+        blank=True,
+        verbose_name="Professores",
+        related_name="trilhas_como_professor",
+        limit_choices_to={"is_staff": True},
+        help_text="Usuários staff que podem marcar presença dos alunos nesta trilha.",
     )
 
     class Meta(BaseModel.Meta):
@@ -174,13 +184,18 @@ class Modulo(BaseModel):
     )
     acesso = models.CharField(
         max_length=30,
-        choices=[
-            (Trilha.AcessoChoices.PUBLICO, "Público"),
-            (Trilha.AcessoChoices.LOGIN_OBRIGATORIO, "Login obrigatório"),
-        ],
+        choices=Trilha.AcessoChoices.choices,
         default=Trilha.AcessoChoices.PUBLICO,
         verbose_name="Acesso",
-        help_text="Controle fino de acesso; permissão por grupo é definida na Trilha.",
+        help_text="Controle fino de acesso. SOMENTE_PROPRIETARIO = apenas o criador vê este módulo.",
+    )
+    professores = models.ManyToManyField(
+        settings.AUTH_USER_MODEL,
+        blank=True,
+        verbose_name="Professores",
+        related_name="modulos_como_professor",
+        limit_choices_to={"is_staff": True},
+        help_text="Usuários staff que podem marcar presença dos alunos neste módulo.",
     )
 
     class Meta(BaseModel.Meta):
@@ -274,13 +289,18 @@ class Tema(BaseModel):
     )
     acesso = models.CharField(
         max_length=30,
-        choices=[
-            (Trilha.AcessoChoices.PUBLICO, "Público"),
-            (Trilha.AcessoChoices.LOGIN_OBRIGATORIO, "Login obrigatório"),
-        ],
+        choices=Trilha.AcessoChoices.choices,
         default=Trilha.AcessoChoices.PUBLICO,
         verbose_name="Acesso",
         help_text="Controle fino de acesso; permissão por grupo é definida na Trilha.",
+    )
+    professores = models.ManyToManyField(
+        settings.AUTH_USER_MODEL,
+        blank=True,
+        verbose_name="Professores",
+        related_name="temas_como_professor",
+        limit_choices_to={"is_staff": True},
+        help_text="Usuários staff que podem marcar presença dos alunos neste tema.",
     )
 
     # ── Conteúdo principal (sempre presente) ─────────────────────────────────
@@ -383,6 +403,15 @@ class ProgressoTema(TimeStampedModel):
         auto_now_add=True,
         verbose_name="Data de Conclusão",
     )
+    marcado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="progressos_marcados_como_professor",
+        verbose_name="Marcado por (Professor)",
+        help_text="Professor que registrou esta conclusão. Null = registrado pelo próprio aluno.",
+    )
 
     class Meta:
         verbose_name = "Progresso de Tema"
@@ -398,92 +427,42 @@ class ProgressoTema(TimeStampedModel):
         return f"{self.usuario} → {self.tema}"
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Topico — agrupa EstudoPessoal (como Trilha agrupa Módulos)
-# ─────────────────────────────────────────────────────────────────────────────
-
-class Topico(models.Model):
-    """Pasta/categoria que organiza Estudos Pessoais. A permissão do Tópico se aplica a todos os estudos dentro dele."""
-
-    class PermissaoChoices(models.TextChoices):
-        SOMENTE_SUPERADMIN = "SOMENTE_SUPERADMIN", "Somente Superadmin"
-        LOGIN_OBRIGATORIO  = "LOGIN_OBRIGATORIO",  "Login obrigatório"
-        PUBLICO            = "PUBLICO",            "Público"
-
-    class ImagemChoices(models.TextChoices):
-        ESTUDO_PESSOAL = "estudopessoal.jpg", "Estudo Pessoal"
-        DEVOCIONAL     = "devocional.jpg",    "Devocional"
-        DISCIPULADO    = "discipulado.jpg",   "Discipulado"
-
-    titulo = models.CharField(
-        max_length=200,
-        verbose_name="Título",
-        help_text="Ex.: 'Evangelhos', 'Cartas de Paulo', 'Sermões sobre Fé'.",
-    )
-    descricao = models.TextField(
-        blank=True,
-        verbose_name="Descrição",
-    )
-    imagem_capa = models.CharField(
-        max_length=50,
-        blank=True,
-        null=True,
-        default="estudopessoal.jpg",
-        choices=ImagemChoices.choices,
-        verbose_name="Imagem de Capa",
-        help_text="Imagem exibida nos cards (escolha da lista de imagens estáticas).",
-    )
-    permissao = models.CharField(
-        max_length=30,
-        choices=PermissaoChoices.choices,
-        default=PermissaoChoices.SOMENTE_SUPERADMIN,
-        verbose_name="Permissão de Acesso",
-        help_text="Define quem pode visualizar todos os estudos deste tópico. Aplica-se a todos os EstudoPessoal dentro dele.",
-    )
-    ordem = models.PositiveIntegerField(
-        default=0,
-        db_index=True,
-        verbose_name="Ordem",
-    )
-    criado_em = models.DateTimeField(auto_now_add=True, verbose_name="Criado em")
-    atualizado_em = models.DateTimeField(auto_now=True, verbose_name="Atualizado em")
-
-    class Meta:
-        verbose_name = "Tópico"
-        verbose_name_plural = "Tópicos de Estudos Pessoais"
-        ordering = ["ordem", "titulo"]
-
-    def __str__(self):
-        return self.titulo
-
-    @property
-    def imagem_capa_url(self) -> str:
-        """Retorna a URL estática da imagem selecionada, ou string vazia."""
-        if not self.imagem_capa:
-            return ""
-        return static(f"images/{self.imagem_capa}")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
 # EstudoPessoal  (visível apenas para superadmin)
 # ─────────────────────────────────────────────────────────────────────────────
 
-class EstudoPessoal(models.Model):
+class EstudoPessoal(BaseModel):
     """
-    Ferramenta de estudo bíblico   — uso exclusivo do superadmin.
-    Estrutura metodológica completa: texto, contexto, hermenêutica,
-    teologia e desenvolvimento homilético.
+    Ferramenta de estudo bíblico pessoal.
+    Pode estar associado a um Módulo (dentro da hierarquia Trilha → Módulo)
+    ou ser um estudo avulso (modulo=None).
+    O acesso SOMENTE_PROPRIETARIO restringe a visualização ao criador (criado_por).
     """
 
     # ── Identificação ────────────────────────────────────────────────────────
-    topico = models.ForeignKey(
-        "Topico",
+
+    class TipoChoices(models.TextChoices):
+        DEVOCIONAL    = "DEVOCIONAL",    "Devocional"
+        DISCIPULADO   = "DISCIPULADO",   "Discipulado"
+        ESTUDO_PESSOAL = "ESTUDO_PESSOAL", "Estudo Pessoal"
+
+    modulo = models.ForeignKey(
+        "Modulo",
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name="estudos",
-        verbose_name="Tópico",
-        help_text="Tópico ao qual este estudo pertence. A permissão do tópico se aplica a este estudo.",
+        related_name="estudos_pessoais",
+        verbose_name="Módulo",
+        help_text="Módulo ao qual este estudo pertence (quando inserido em uma Trilha).",
+    )
+    tipo = models.CharField(
+        max_length=20,
+        choices=TipoChoices.choices,
+        default=TipoChoices.ESTUDO_PESSOAL,
+        verbose_name="Tipo",
+        help_text="Classificação do estudo.",
     )
     titulo = models.CharField(
         max_length=300,
@@ -671,27 +650,20 @@ class EstudoPessoal(models.Model):
         help_text="Sugestão de oração para encerrar o estudo ou o culto.",
     )
 
-    # ── Permissão de acesso ───────────────────────────────────────────────────
+    # ── Controle de acesso ───────────────────────────────────────────────────
 
-    class PermissaoChoices(models.TextChoices):
-        SOMENTE_SUPERADMIN = "SOMENTE_SUPERADMIN", "Somente Superadmin"
-        LOGIN_OBRIGATORIO  = "LOGIN_OBRIGATORIO",  "Login obrigatório"
-        PUBLICO            = "PUBLICO",            "Público"
-
-    permissao = models.CharField(
+    acesso = models.CharField(
         max_length=30,
-        choices=PermissaoChoices.choices,
-        default=PermissaoChoices.SOMENTE_SUPERADMIN,
-        verbose_name="Permissão de Acesso",
-        help_text="Define quem pode visualizar este estudo nos templates.",
+        choices=Trilha.AcessoChoices.choices,
+        default=Trilha.AcessoChoices.SOMENTE_PROPRIETARIO,
+        verbose_name="Acesso",
+        help_text=(
+            "SOMENTE_PROPRIETARIO = apenas o criador (criado_por) pode visualizar. "
+            "LOGIN_OBRIGATORIO = qualquer usuário logado. PUBLICO = todos."
+        ),
     )
 
-    # ── Auditoria ─────────────────────────────────────────────────────────────
-    criado_em = models.DateTimeField(auto_now_add=True, verbose_name="Criado em")
-    atualizado_em = models.DateTimeField(auto_now=True, verbose_name="Atualizado em")
-
-
-    class Meta:
+    class Meta(BaseModel.Meta):
         verbose_name = "Estudo Pessoal"
         verbose_name_plural = "Estudos Pessoais"
         ordering = ["-criado_em"]
@@ -750,3 +722,53 @@ class TopicoEstudo(models.Model):
 
     def __str__(self):
         return f"[{self.ordem}] {self.titulo}"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# ProgressoEstudoPessoal
+# ─────────────────────────────────────────────────────────────────────────────
+
+class ProgressoEstudoPessoal(TimeStampedModel):
+    """Registra a conclusão de um EstudoPessoal por um usuário.
+
+    Pode ser marcado pelo próprio aluno ou por um professor (marcado_por).
+    """
+
+    usuario = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="progressos_estudo_pessoal",
+        verbose_name="Usuário",
+    )
+    estudo = models.ForeignKey(
+        "EstudoPessoal",
+        on_delete=models.CASCADE,
+        related_name="progressos",
+        verbose_name="Estudo Pessoal",
+    )
+    data_conclusao = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Data de Conclusão",
+    )
+    marcado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="estudos_pessoais_marcados_como_professor",
+        verbose_name="Marcado por (Professor)",
+        help_text="Professor que registrou esta conclusão. Null = registrado pelo próprio aluno.",
+    )
+
+    class Meta:
+        verbose_name = "Progresso de Estudo Pessoal"
+        verbose_name_plural = "Progressos de Estudos Pessoais"
+        unique_together = [("usuario", "estudo")]
+        ordering = ["-criado_em"]
+        indexes = [
+            models.Index(fields=["usuario", "estudo"]),
+            models.Index(fields=["usuario"]),
+        ]
+
+    def __str__(self):
+        return f"{self.usuario} → {self.estudo}"

@@ -13,9 +13,8 @@ urlpatterns = [
     # Progresso pessoal
     path("meu-progresso/", views.MeuProgressoView.as_view(), name="meu_progresso"),
 
-    # ── Estudos Pessoais (superadmin only) — ANTES do <slug:slug>/ ──────────
+    # ── Estudos Pessoais — ANTES do <slug:slug>/ ───────────────────────
     path("estudos-pessoais/", views.EstudoPessoalListView.as_view(), name="estudopessoal_lista"),
-    path("estudos-pessoais/topico/<int:pk>/", views.TopicoDetalheView.as_view(), name="topico_detalhe"),
     path("estudos-pessoais/<int:pk>/", views.EstudoPessoalDetalheView.as_view(), name="estudopessoal_detalhe"),
 
     # Detalhe de módulo / tema  (prefixados, sem conflito)
