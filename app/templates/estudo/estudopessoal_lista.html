@@ -10,60 +10,21 @@
       <h1 class="h3 mb-1">
         <i class="bi bi-book me-2"></i>Estudos Pessoais
       </h1>
-      <p class="text-muted small mb-0">Área exclusiva para superadmin — organizada por tópicos.</p>
+      <p class="text-muted small mb-0">Seus estudos bíblicos pessoais.</p>
     </div>
+    {% if request.user.is_superuser %}
     <div class="d-flex gap-2">
-      <a href="{% url 'admin:estudo_topico_add' %}" class="btn btn-outline-secondary btn-sm">
-        <i class="bi bi-folder-plus me-1"></i> Novo Tópico
-      </a>
       <a href="{% url 'admin:estudo_estudopessoal_add' %}" class="btn btn-primary btn-sm">
         <i class="bi bi-plus me-1"></i> Novo Estudo
       </a>
     </div>
+    {% endif %}
   </div>
 
-  {# ── Tópicos ────────────────────────────────────────────────────────────── #}
-  {% if topicos %}
-  <div class="row g-3 mb-4">
-    {% for topico in topicos %}
-    <div class="col-12 col-md-6 col-xl-4">
-      <div class="card h-100 shadow-sm border-0">
-        <div class="card-body">
-          <h5 class="card-title fw-semibold mb-1">
-            <a href="{% url 'estudo:topico_detalhe' topico.pk %}" class="text-decoration-none stretched-link">
-              <i class="bi bi-folder2-open me-1 text-warning"></i>{{ topico.titulo }}
-            </a>
-          </h5>
-          {% if topico.descricao %}
-          <p class="card-text text-muted small mb-2">{{ topico.descricao|truncatewords:15 }}</p>
-          {% endif %}
-          <span class="badge bg-primary rounded-pill">{{ topico.estudos.count }} estudo(s)</span>
-        </div>
-        <div class="card-footer bg-transparent border-top-0 d-flex justify-content-end pb-3">
-          <a href="{% url 'admin:estudo_topico_change' topico.pk %}"
-             class="btn btn-outline-warning btn-sm" title="Editar tópico">
-            <i class="bi bi-pencil"></i>
-          </a>
-        </div>
-      </div>
-    </div>
-    {% endfor %}
-  </div>
-  {% else %}
-  <div class="text-center py-4 mb-4 rounded-3 border border-dashed">
-    <i class="bi bi-folder2-open text-muted" style="font-size:2.5rem;"></i>
-    <p class="text-muted mt-2 mb-1">Nenhum tópico criado ainda.</p>
-    <a href="{% url 'admin:estudo_topico_add' %}" class="btn btn-primary btn-sm">Criar primeiro tópico</a>
-  </div>
-  {% endif %}
-
-  {# ── Estudos sem tópico ─────────────────────────────────────────────────── #}
-  {% if estudos_sem_topico %}
-  <h2 class="h5 fw-semibold border-bottom pb-2 mb-3 text-muted">
-    <i class="bi bi-journal-x me-1"></i>Estudos sem tópico
-  </h2>
+  {# ── Lista de estudos ───────────────────────────────────────────────────── #}
+  {% if estudos %}
   <div class="row g-3">
-    {% for estudo in estudos_sem_topico %}
+    {% for estudo in estudos %}
     <div class="col-12 col-md-6 col-xl-4">
       <div class="card h-100 shadow-sm border-0">
         <div class="card-body">
@@ -79,6 +40,7 @@
             {{ estudo.criado_em|date:"d/m/Y" }}
           </p>
         </div>
+        {% if request.user.is_superuser or perms.estudo.exportar_estudopessoal %}
         <div class="card-footer bg-transparent border-top-0 d-flex gap-1 pb-3">
           <a href="{% url 'admin:estudo_estudopessoal_exportar_txt' estudo.pk %}"
              class="btn btn-outline-secondary btn-sm" title="TXT">TXT</a>
@@ -86,11 +48,14 @@
              class="btn btn-outline-danger btn-sm" title="PDF">PDF</a>
           <a href="{% url 'admin:estudo_estudopessoal_exportar_docx' estudo.pk %}"
              class="btn btn-outline-primary btn-sm" title="DOCX">DOCX</a>
+          {% if request.user.is_superuser %}
           <a href="{% url 'admin:estudo_estudopessoal_change' estudo.pk %}"
              class="btn btn-outline-warning btn-sm ms-auto" title="Editar">
             <i class="bi bi-pencil"></i>
           </a>
+          {% endif %}
         </div>
+        {% endif %}
       </div>
     </div>
     {% endfor %}
