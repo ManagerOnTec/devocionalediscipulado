@@ -414,14 +414,6 @@ class TemaAdmin(BaseModelAdmin):
             },
         ),
         (
-            "Oração",
-            {
-                "fields": ("tem_oracao", "oracao"),
-                "classes": ("collapse",),
-                "description": "Ative para exibir uma oração ao final do tema.",
-            },
-        ),
-        (
             "Referências Cruzadas",
             {
                 "fields": ("tem_referencias", "referencias_cruzadas"),
@@ -429,9 +421,16 @@ class TemaAdmin(BaseModelAdmin):
             },
         ),
         (
-            "Estudo Aprofundado",
+            "Estudo",
             {
                 "fields": ("tem_estudo", "estudo"),
+                "classes": ("collapse",),
+            },
+        ),
+        (
+            "Conclusão",
+            {
+                "fields": ("tem_conclusao", "conclusao"),
                 "classes": ("collapse",),
             },
         ),
@@ -443,10 +442,11 @@ class TemaAdmin(BaseModelAdmin):
             },
         ),
         (
-            "Conclusão",
+            "Oração",
             {
-                "fields": ("tem_conclusao", "conclusao"),
+                "fields": ("tem_oracao", "oracao"),
                 "classes": ("collapse",),
+                "description": "Ative para exibir uma oração ao final do tema.",
             },
         ),
         (
@@ -665,6 +665,5 @@ class ProgressoTemaAdmin(StaffAccessMixin, UnfoldModelAdmin):
         return self.readonly_fields
     def has_delete_permission(self, request, obj=None):
         return request.user.is_superuser
-
 
 
