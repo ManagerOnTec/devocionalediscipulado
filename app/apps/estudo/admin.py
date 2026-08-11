@@ -20,10 +20,11 @@ from unfold.admin import ModelAdmin as UnfoldModelAdmin
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
-
+from django.db import models
 from .importers import agrupar_temas, parsear_docx
 from .models import Modulo, ProgressoTema, Tema, Trilha
 
+User = get_user_model()
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Inlines
@@ -408,17 +409,9 @@ class TemaAdmin(BaseModelAdmin):
             },
         ),
         (
-            "Conteúdo Principal",
+            "Texto Base",
             {
                 "fields": ("texto_base",),
-            },
-        ),
-        (
-            "Oração",
-            {
-                "fields": ("tem_oracao", "oracao"),
-                "classes": ("collapse",),
-                "description": "Ative para exibir uma oração ao final do tema.",
             },
         ),
         (
@@ -436,6 +429,13 @@ class TemaAdmin(BaseModelAdmin):
             },
         ),
         (
+            "Conclusão",
+            {
+                "fields": ("tem_conclusao", "conclusao"),
+                "classes": ("collapse",),
+            },
+        ),
+        (
             "Exemplo Prático",
             {
                 "fields": ("tem_exemplo", "exemplo_pratico"),
@@ -443,10 +443,11 @@ class TemaAdmin(BaseModelAdmin):
             },
         ),
         (
-            "Conclusão",
+            "Oração",
             {
-                "fields": ("tem_conclusao", "conclusao"),
+                "fields": ("tem_oracao", "oracao"),
                 "classes": ("collapse",),
+                "description": "Ative para exibir uma oração ao final do tema.",
             },
         ),
         (
@@ -480,6 +481,10 @@ class ProgressoTemaAdmin(StaffAccessMixin, UnfoldModelAdmin):
     """Uma linha por usuário × módulo — exibe o último tema concluído e data."""
 
     change_list_template = "admin/estudo/progressotema/change_list.html"
+    form = forms.ModelForm # Usar um form padrão para sobrescrever no get_form
+
+    class Media:
+        pass
 
     list_display = (
         "usuario",
@@ -487,12 +492,13 @@ class ProgressoTemaAdmin(StaffAccessMixin, UnfoldModelAdmin):
         "modulo_col",
         "percentual_modulo",
         "ultimo_tema_col",
-        "data_conclusao",
+        "criado_em",
     )
     list_filter = ("tema__modulo__trilha", "tema__modulo")
     search_fields = ("usuario__email", "tema__titulo", "tema__modulo__titulo", "tema__modulo__trilha__titulo")
     ordering = ("usuario__nome_completo", "tema__modulo__trilha__titulo", "tema__modulo__titulo")
-    readonly_fields = ("criado_em", "atualizado_em", "data_conclusao", "marcado_por")
+    autocomplete_fields = ["usuario"]
+    readonly_fields = ("criado_em", "atualizado_em")
 
     def _qs_usuarios_visiveis(self, request):
         """
@@ -500,7 +506,7 @@ class ProgressoTemaAdmin(StaffAccessMixin, UnfoldModelAdmin):
         None = sem restrição (superusuário ou staff com acesso admin).
         """
         if request.user.is_staff:
-            return None
+            return None # Superusers e Staff veem tudo
         # Usuário comum: apenas o próprio progresso
         return [request.user.pk]
 
@@ -570,15 +576,15 @@ class ProgressoTemaAdmin(StaffAccessMixin, UnfoldModelAdmin):
     # ── Changelist com indicadores KPI ────────────────────────────────────────
 
     def changelist_view(self, request, extra_context=None):
+        """Sobrescreve a changelist para adicionar KPIs e o botão de lançamento manual."""
         from django.db.models import Count
         from django.utils import timezone
 
         from .models import Tema as _Tema
 
         extra_context = extra_context or {}
-        extra_context["title"] = "Progressos por Módulo"
 
-        # Escopa os KPIs pela mesma regra de visibilidade do get_queryset
+        extra_context["title"] = "Progressos por Módulo"
         visiveis = self._qs_usuarios_visiveis(request)
         qs_base = ProgressoTema.objects.all()
         if visiveis is not None:
@@ -587,7 +593,7 @@ class ProgressoTemaAdmin(StaffAccessMixin, UnfoldModelAdmin):
         total_alunos = qs_base.values("usuario").distinct().count()
         total_conclusoes = qs_base.count()
         hoje = timezone.localdate()
-        conclusoes_hoje = qs_base.filter(data_conclusao__date=hoje).count()
+        conclusoes_hoje = qs_base.filter(criado_em__date=hoje).count()
 
         # Percentual médio: para cada par (usuário, módulo) calcula % e tira a média
         pares = list(
@@ -642,13 +648,13 @@ class ProgressoTemaAdmin(StaffAccessMixin, UnfoldModelAdmin):
             (
                 None,
                 {
-                    "fields": ("usuario", "tema", "data_conclusao"),
+                    "fields": ("usuario", "tema", "criado_em"),
                 },
             ),
             (
                 "Auditoria",
                 {
-                    "fields": ("criado_em", "atualizado_em"),
+                    "fields": ("criado_em", "atualizado_em", "marcado_por"),
                     "classes": ("collapse",),
                 },
             ),
@@ -661,10 +667,139 @@ class ProgressoTemaAdmin(StaffAccessMixin, UnfoldModelAdmin):
             kwargs["queryset"] = User.objects.filter(is_active=True).order_by("nome_completo")
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
+    def get_form(self, request, obj=None, **kwargs):
+        """Filtra o campo 'tema' com base nas permissões do professor."""
+        form = super().get_form(request, obj, **kwargs)
+        if request.user.is_superuser:
+            return form
+
+        # Filtra os temas que o professor logado pode gerenciar
+        temas_qs = Tema.objects.filter(
+            models.Q(professores=request.user) |
+            models.Q(modulo__professores=request.user) |
+            models.Q(modulo__trilha__professores=request.user)
+        ).distinct()
+
+        if 'tema' in form.base_fields:
+            form.base_fields['tema'].queryset = temas_qs
+        return form
+
     def get_readonly_fields(self, request, obj=None):
-        return self.readonly_fields
+        # Adiciona 'marcado_por' aos readonly fields
+        return list(self.readonly_fields) + ["marcado_por"]
+
     def has_delete_permission(self, request, obj=None):
         return request.user.is_superuser
 
+    def save_model(self, request, obj, form, change):
+        """Define o professor que marcou a conclusão, se for uma adição."""
+        if not change: # Apenas na criação
+            obj.marcado_por = request.user
+        super().save_model(request, obj, form, change)
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Lançador de Aulas (Múltiplos Alunos)
+# ─────────────────────────────────────────────────────────────────────────────
+
+class ProgressoAlunoInline(admin.TabularInline):
+    """Inline para adicionar múltiplos alunos."""
+    model = ProgressoTema
+    form = forms.ModelForm
+    extra = 1
+    fields = ("usuario",)
+    autocomplete_fields = ("usuario",)
+    verbose_name = "Aluno"
+    verbose_name_plural = "Alunos Presentes"
+
+    def has_change_permission(self, request, obj=None):
+        return False # Apenas adicionar
+
+    def has_delete_permission(self, request, obj=None):
+        return False # Apenas adicionar
+
+
+class TemaProxy(Tema):
+    class Meta:
+        proxy = True
+        app_label = "estudo"  # Garante que apareça no menu do app Estudo
+        verbose_name = "Lançador de Presença"
+        verbose_name_plural = "Lançadores de Presença"
+
+
+@admin.register(TemaProxy)
+class LancadorAulaAdmin(StaffAccessMixin, UnfoldModelAdmin):
+    """
+    Interface para lançamento de presença (ProgressoTema) para múltiplos alunos
+    em um tema existente.
+
+    Acesse a lista de temas e use a ação "Lançar Presença" em um tema específico.
+    """
+
+    inlines = [ProgressoAlunoInline]
+    unfold_show_in_sidebar = True  # Força a exibição no menu lateral
+
+    list_display = ("titulo", "modulo", "modulo__trilha", "criado_em")
+    list_filter = ("modulo__trilha", "modulo")
+    search_fields = ("titulo", "modulo__titulo")
+    ordering = ("-criado_em",)
+
+    def has_module_permission(self, request):
+        return request.user.is_staff
+
+    def has_add_permission(self, request):
+        # Desabilita o botão "Adicionar", pois a ação é feita a partir da lista
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        # Desabilita a ação de deletar temas a partir desta interface
+        return False
+
+    def get_fieldsets(self, request, obj=None):
+        """
+        Na tela de lançamento (change view), mostra apenas informações do tema
+        e o inline de alunos, ocultando os campos de edição do tema.
+        """
+        if obj:
+            return [
+                (
+                    "Lançando Presença para o Tema",
+                    {
+                        "fields": ("titulo", "modulo"),
+                        "description": "Adicione os alunos presentes abaixo e clique em salvar.",
+                    },
+                ),
+            ]
+        return []
+
+    def save_formset(self, request, form, formset, change):
+        """
+        Ao salvar o formulário (que agora é a change_view), associa o tema (objeto pai)
+        e o professor a cada progresso de aluno adicionado no inline.
+        """
+        instances = formset.save(commit=False)
+        tema = form.instance
+        criados = 0
+        total = 0
+
+        for progresso in instances:
+            total += 1
+            # Evita duplicados
+            if not ProgressoTema.objects.filter(usuario=progresso.usuario, tema=tema).exists():
+                progresso.tema = tema
+                progresso.marcado_por = request.user
+                progresso.save()
+                criados += 1
+
+        if criados > 0:
+            msg = (
+                f"{criados} de {total} progressos foram registrados com sucesso. "
+                "Os demais já haviam sido concluídos."
+            )
+            self.message_user(request, msg, messages.SUCCESS)
+
+    def get_readonly_fields(self, request, obj=None):
+        """Torna os campos do tema somente leitura na tela de lançamento."""
+        if obj:
+            return ["titulo", "modulo"]
+        return super().get_readonly_fields(request, obj)

@@ -380,6 +380,14 @@ UNFOLD = {
                             "estudo.view_progressotema"
                         ),
                     },
+                    # {
+                    #     "title": "Estudos Pessoais",
+                    #     "icon": "edit_note",
+                    #     "link": reverse_lazy("admin:estudo_estudopessoal_changelist"),
+                    #     "permission": lambda request: request.user.is_staff or request.user.has_perm(
+                    #         "estudo.view_estudopessoal"
+                    #     ),
+                    # },
                 ],
             },
             {

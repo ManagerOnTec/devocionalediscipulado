@@ -20,7 +20,7 @@ class HomeView(TemplateView):
         """Adiciona dados de contexto ao template."""
         context = super().get_context_data(**kwargs)
         context["titulo"] = "Devocional e Discipulado"
-        context["subtitulo"] = "Sistema de gestão de devocionais e discipulado"
+        context["subtitulo"] = "Sistema para devocionais e discipulados"
         if self.request.user.is_authenticated and self.request.user.is_superuser:
             try:
                 from apps.estudo.models import Topico

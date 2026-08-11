@@ -21,14 +21,24 @@
             <li class="breadcrumb-item">
                 <a href="{% url 'estudo:detalhe_modulo' slug=tema.modulo.slug %}" class="text-decoration-none">{{ tema.modulo.titulo }}</a>
             </li>
+{% block content %}
+<div class="container mt-4">
+    <!-- Breadcrumbs e Título -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'estudo:lista_trilhas' %}">Estudos</a></li>
+            <li class="breadcrumb-item"><a href="{{ tema.modulo.trilha.get_absolute_url }}">{{ tema.modulo.trilha.titulo }}</a></li>
+            <li class.breadcrumb-item"><a href="{{ tema.modulo.get_absolute_url }}">{{ tema.modulo.titulo }}</a></li>
             <li class="breadcrumb-item active" aria-current="page">{{ tema.titulo }}</li>
         </ol>
     </div>
 </nav>
 {% endblock %}
+    </nav>
 
 {% block content %}
-<article class="mx-auto py-4" style="max-width: 780px;">
+<article class="mx-auto" style="max-width: 780px;">
+    <h1 class="mb-3">{{ tema.titulo }}</h1>
 
     {# ── Cabeçalho ── #}
     <header class="mb-4">
@@ -44,6 +54,9 @@
         </span>
         {% endif %}
     </header>
+    <!-- Conteúdo do Tema -->
+    <div class="card">
+        <div class="card-body">
 
     {# ── Texto Base ── #}
     <section aria-labelledby="texto-base-heading" class="mb-4">
@@ -109,8 +122,12 @@
     </section>
     {% endif %}
 
-    {# ── Ações: concluir / desmarcar ── #}
+    {# ── Ações: concluir + navegação ── #}
     <div class="d-flex flex-column gap-3 mt-5">
+        </div>
+    </div>
+
+        {# ── Botão concluir / desmarcar ── #}
         {% if user.is_authenticated and not ja_concluido %}
         <form method="post" action="{% url 'estudo:concluir_tema' slug=tema.slug %}">
             {% csrf_token %}
@@ -133,32 +150,47 @@
 
         {# ── Navegação entre temas ── #}
         <div class="d-flex justify-content-between gap-2 flex-wrap">
-            <div>
-                {% if tema_anterior %}
-                <a href="{% url 'estudo:detalhe_tema' slug=tema_anterior.slug %}" class="btn btn-outline-secondary btn-sm">
-                    <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>{{ tema_anterior.titulo|truncatechars:30 }}
-                </a>
-                {% else %}
-                <a href="{% url 'estudo:detalhe_modulo' slug=tema.modulo.slug %}" class="btn btn-outline-secondary btn-sm">
-                    <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Voltar ao módulo
-                </a>
-                {% endif %}
-            </div>
-            <div>
-                {% if proximo_tema %}
-                <a href="{% url 'estudo:detalhe_tema' slug=proximo_tema.slug %}" class="btn btn-primary btn-sm ms-auto">
-                    {{ proximo_tema.titulo|truncatechars:30 }}<i class="bi bi-arrow-right ms-1" aria-hidden="true"></i>
-                </a>
-                {% else %}
-                <a href="{% url 'estudo:detalhe_modulo' slug=tema.modulo.slug %}" class="btn btn-outline-primary btn-sm ms-auto">
-                    Módulo concluído <i class="bi bi-trophy ms-1" aria-hidden="true"></i>
-                </a>
-                {% endif %}
-            </div>
+    <!-- Navegação e Ação de Concluir -->
+    <div class="d-flex justify-content-between align-items-center mt-4">
+        <div>
+            {% if tema_anterior %}
+            <a href="{% url 'estudo:detalhe_tema' slug=tema_anterior.slug %}" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>{{ tema_anterior.titulo|truncatechars:30 }}
+            </a>
+                <a href="{{ tema_anterior.get_absolute_url }}" class="btn btn-outline-secondary">← Tema Anterior</a>
+            {% endif %}
         </div>
+        <div>
+            {% if not ja_concluido %}
+                <form action="{% url 'estudo:concluir_tema' tema.slug %}" method="post">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-success">Marcar como Concluído</button>
+                </form>
+            {% else %}
+            <a href="{% url 'estudo:detalhe_modulo' slug=tema.modulo.slug %}" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Voltar ao módulo
+            </a>
+                <span class="badge bg-success p-2"><i class="bi bi-check-circle-fill"></i> Tema Concluído</span>
+            {% endif %}
+
+        </div>
+        <div>
+            {% if proximo_tema %}
+            <a href="{% url 'estudo:detalhe_tema' slug=proximo_tema.slug %}" class="btn btn-primary btn-sm ms-auto">
+                {{ proximo_tema.titulo|truncatechars:30 }}<i class="bi bi-arrow-right ms-1" aria-hidden="true"></i>
+            </a>
+            {% else %}
+            <a href="{% url 'estudo:detalhe_modulo' slug=tema.modulo.slug %}" class="btn btn-outline-primary btn-sm ms-auto">
+                Módulo concluído <i class="bi bi-trophy ms-1" aria-hidden="true"></i>
+            </a>
+                <a href="{{ proximo_tema.get_absolute_url }}" class="btn btn-primary">Próximo Tema →</a>
+            {% endif %}
+        </div>
+
     </div>
 
 </article>
+</div>
 {% endblock %}
 
 {% block extra_js %}

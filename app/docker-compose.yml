@@ -39,15 +39,13 @@ services:
   web:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.dev
       # Usa o stage builder que tem ferramentas de dev
-      target: builder
+      # target: builder
     container_name: devocional_web
     restart: unless-stopped
     # Sobrescreve o entrypoint de produção: usa runserver para hot-reload
-    command: >
-      sh -c "python manage.py migrate --noinput &&
-             python manage.py runserver 0.0.0.0:8000"
+    command: python manage.py runserver 0.0.0.0:8000
     volumes:
       # Monta o código local para hot-reload
       - .:/app

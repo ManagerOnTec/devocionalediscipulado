@@ -29,7 +29,7 @@ class Trilha(BaseModel):
     class TipoChoices(models.TextChoices):
         DEVOCIONAL    = "DEVOCIONAL",    "Devocional"
         DISCIPULADO   = "DISCIPULADO",   "Discipulado"
-
+        
     class StatusChoices(models.TextChoices):
         RASCUNHO  = "RASCUNHO",  "Rascunho"
         PUBLICADO = "PUBLICADO", "Publicado"
@@ -204,7 +204,7 @@ class Modulo(BaseModel):
         indexes = [models.Index(fields=["trilha", "ordem"])]
 
     def __str__(self):
-        return f"{self.trilha} — {self.titulo}"
+        return self.titulo
 
     def save(self, *args, **kwargs):
         if not self.slug:
@@ -397,10 +397,6 @@ class ProgressoTema(TimeStampedModel):
         related_name="progressos",
         verbose_name="Tema",
     )
-    data_conclusao = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name="Data de Conclusão",
-    )
     marcado_por = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
@@ -423,6 +419,3 @@ class ProgressoTema(TimeStampedModel):
 
     def __str__(self):
         return f"{self.usuario} → {self.tema}"
-
-
-
